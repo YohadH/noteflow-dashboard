@@ -6,15 +6,17 @@ import { PriorityBadge } from '@/components/PriorityBadge';
 import { formatDate } from '@/lib/noteUtils';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { NavigateFunction } from 'react-router-dom';
 
 interface LayoutContext {
   onEditNote: (note: Note) => void;
-  onNewNote: () => void;
+  onNewNote: (defaults?: Partial<Note>) => void;
+  navigate: NavigateFunction;
 }
 
 export default function DashboardPage() {
   const { notes, reminders, alerts, emailActions } = useNoteStore();
-  const { onEditNote, onNewNote } = useOutletContext<LayoutContext>();
+  const { onEditNote, onNewNote, navigate } = useOutletContext<LayoutContext>();
 
   const activeNotes = notes.filter((n) => n.status === 'active');
   const dueToday = activeNotes.filter((n) => n.dueDate && formatDate(n.dueDate) === 'היום');
@@ -33,10 +35,10 @@ export default function DashboardPage() {
   ];
 
   const quickActions = [
-    { label: 'הוסף פתק', icon: Plus, action: onNewNote },
-    { label: 'הגדר תזכורת', icon: Bell, action: () => {} },
-    { label: 'צור התראה', icon: AlertTriangle, action: () => {} },
-    { label: 'טיוטת אימייל', icon: Mail, action: () => {} },
+    { label: 'הוסף פתק', icon: Plus, action: () => onNewNote() },
+    { label: 'הגדר תזכורת', icon: Bell, action: () => onNewNote({ reminderAt: new Date().toISOString() }) },
+    { label: 'צור התראה', icon: AlertTriangle, action: () => onNewNote({ hasAlert: true }) },
+    { label: 'טיוטת אימייל', icon: Mail, action: () => onNewNote({ hasEmailAction: true }) },
   ];
 
   return (
