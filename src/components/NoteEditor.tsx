@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Note, Priority, NoteStatus } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ interface NoteEditorProps {
   open: boolean;
   onClose: () => void;
   onSave: (note: Note) => void;
+  defaults?: Partial<Note>;
 }
 
 const defaultNote: Omit<Note, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -24,15 +25,29 @@ const defaultNote: Omit<Note, 'id' | 'createdAt' | 'updatedAt'> = {
   hasAlert: false, hasEmailAction: false,
 };
 
-export function NoteEditor({ note, open, onClose, onSave }: NoteEditorProps) {
+export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditorProps) {
   const isNew = !note;
   const [form, setForm] = useState(() => note ? { ...note } : {
     ...defaultNote,
+    ...defaults,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   } as Note);
   const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setForm(note ? { ...note } : {
+        ...defaultNote,
+        ...defaults,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as Note);
+      setDirty(false);
+    }
+  }, [open, note, defaults]);
 
   const update = <K extends keyof Note>(key: K, val: Note[K]) => {
     setForm((f) => ({ ...f, [key]: val }));

@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 interface LayoutContext {
   onEditNote: (note: Note) => void;
-  onNewNote: () => void;
+  onNewNote: (defaults?: Partial<Note>) => void;
 }
 
 type SortBy = 'newest' | 'oldest' | 'priority' | 'dueDate';
@@ -76,7 +76,7 @@ export default function NotesPage() {
           <h1 className="text-2xl font-semibold tracking-tight">פתקים</h1>
           <p className="text-sm text-muted-foreground mt-1">{filtered.length} פתקים</p>
         </div>
-        <Button onClick={onNewNote} className="gap-1.5">
+        <Button onClick={() => onNewNote()} className="gap-1.5">
           <Plus className="h-4 w-4" />
           פתק חדש
         </Button>
@@ -148,7 +148,7 @@ export default function NotesPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground">אין פתקים התואמים את הסינון</p>
-          <Button variant="outline" className="mt-4" onClick={onNewNote}>צור פתק</Button>
+          <Button variant="outline" className="mt-4" onClick={() => onNewNote()}>צור פתק</Button>
         </div>
       ) : null}
 
