@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 interface LayoutContext {
   onEditNote: (note: Note) => void;
-  onNewNote: () => void;
+  onNewNote: (defaults?: Partial<Note>) => void;
 }
 
 type SortBy = 'newest' | 'oldest' | 'priority' | 'dueDate';
