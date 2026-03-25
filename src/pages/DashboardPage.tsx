@@ -71,16 +71,16 @@ export default function DashboardPage() {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Today's priorities */}
-        <div className="bg-card rounded-lg border p-5 shadow-card">
-          <h2 className="font-medium text-sm mb-4 flex items-center gap-2">
+        <div className="bg-card rounded-lg border p-5 shadow-card flex flex-col max-h-80">
+          <h2 className="font-medium text-sm mb-4 flex items-center gap-2 shrink-0">
             <Flag className="h-4 w-4 text-priority-urgent" />
             עדיפויות להיום
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto min-h-0 flex-1">
             {highPriority.length === 0 ? (
               <p className="text-sm text-muted-foreground">אין פריטים בעדיפות גבוהה</p>
             ) : (
-              highPriority.slice(0, 4).map((note) => (
+              highPriority.map((note) => (
                 <div key={note.id} onClick={() => onEditNote(note)} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors">
                   <PriorityBadge priority={note.priority} />
                   <span className="text-sm truncate flex-1">{note.title}</span>
@@ -91,12 +91,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Upcoming reminders */}
-        <div className="bg-card rounded-lg border p-5 shadow-card">
-          <h2 className="font-medium text-sm mb-4 flex items-center gap-2">
+        <div className="bg-card rounded-lg border p-5 shadow-card flex flex-col max-h-80">
+          <h2 className="font-medium text-sm mb-4 flex items-center gap-2 shrink-0">
             <Bell className="h-4 w-4 text-primary" />
             תזכורות קרובות
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto min-h-0 flex-1">
             {upcomingReminders.length === 0 ? (
               <p className="text-sm text-muted-foreground">אין תזכורות קרובות</p>
             ) : (
@@ -114,12 +114,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent notes */}
-        <div className="bg-card rounded-lg border p-5 shadow-card">
-          <h2 className="font-medium text-sm mb-4 flex items-center gap-2">
+        <div className="bg-card rounded-lg border p-5 shadow-card flex flex-col max-h-80">
+          <h2 className="font-medium text-sm mb-4 flex items-center gap-2 shrink-0">
             <StickyNote className="h-4 w-4 text-primary" />
             פתקים אחרונים
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto min-h-0 flex-1">
             {recentNotes.map((note) => (
               <div key={note.id} onClick={() => onEditNote(note)} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors">
                 <span className="text-sm truncate flex-1">{note.title}</span>
