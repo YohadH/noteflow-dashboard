@@ -127,6 +127,11 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+
+  /* Global RTL support: convert physical properties to logical */
+  [dir="rtl"] {
+    text-align: right;
+  }
 }
 
 @layer utilities {
