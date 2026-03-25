@@ -69,7 +69,7 @@ export function NoteCard({ note, view = 'grid', onEdit, onDelete, onArchive }: N
         <DropdownMenu>
           <DropdownMenuTrigger
             onClick={(e) => e.stopPropagation()}
-            className="mr-auto opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+            className="ms-auto opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
