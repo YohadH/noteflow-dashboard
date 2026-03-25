@@ -10,6 +10,7 @@ import AlertsPage from "@/pages/AlertsPage";
 import EmailActionsPage from "@/pages/EmailActionsPage";
 import PriorityViewPage from "@/pages/PriorityViewPage";
 import SettingsPage from "@/pages/SettingsPage";
+import CalendarPage from "@/pages/CalendarPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/alerts" element={<AlertsPage />} />
             <Route path="/email-actions" element={<EmailActionsPage />} />
             <Route path="/priorities" element={<PriorityViewPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />

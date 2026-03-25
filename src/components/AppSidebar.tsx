@@ -3,12 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, StickyNote, Bell, AlertTriangle, Mail,
-  Flag, Settings, ChevronLeft, ChevronRight, Zap,
+  Flag, CalendarDays, Settings, ChevronLeft, ChevronRight, Zap,
 } from 'lucide-react';
 
 const navItems = [
   { label: 'לוח בקרה', path: '/', icon: LayoutDashboard },
   { label: 'פתקים', path: '/notes', icon: StickyNote },
+  { label: 'לוח שנה', path: '/calendar', icon: CalendarDays },
   { label: 'תזכורות', path: '/reminders', icon: Bell },
   { label: 'התראות', path: '/alerts', icon: AlertTriangle },
   { label: 'פעולות אימייל', path: '/email-actions', icon: Mail },
