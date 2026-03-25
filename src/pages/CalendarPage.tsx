@@ -5,9 +5,8 @@ import { Note } from '@/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { PriorityBadge } from '@/components/PriorityBadge';
-import { StatusBadge } from '@/components/StatusBadge';
 import { cn } from '@/lib/utils';
-import { format, isSameDay, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { CalendarDays, Clock, StickyNote } from 'lucide-react';
 
@@ -123,7 +122,7 @@ export default function CalendarPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <PriorityBadge priority={note.priority} />
-                      <StatusBadge status={note.status} />
+                      <Badge variant="secondary" className="text-xs">{note.status === 'active' ? 'פעיל' : note.status === 'completed' ? 'הושלם' : 'בארכיון'}</Badge>
                     </div>
                   </div>
                   {note.tags.length > 0 && (
