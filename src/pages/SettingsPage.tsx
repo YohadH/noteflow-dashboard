@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const handleAddTag = () => {
     const name = prompt('שם תגית חדשה:');
     if (name?.trim()) {
-      setTags((prev) => [...prev, { id: crypto.randomUUID(), name: name.trim() }]);
+      setTags((prev) => [...prev, { id: crypto.randomUUID(), name: name.trim(), color: '#6b7280' }]);
       toast({ title: 'תגית נוספה', description: `"${name.trim()}" נוספה בהצלחה.` });
     }
   };
