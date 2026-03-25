@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -6,9 +7,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Bell, Mail, Palette, Tag, Plug, CheckCircle2, XCircle } from 'lucide-react';
-import { tags, categories } from '@/data/mockData';
+import { tags as defaultTags, categories as defaultCategories } from '@/data/mockData';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SettingsPage() {
+  const { toast } = useToast();
+  const [categories, setCategories] = useState(defaultCategories);
+  const [tags, setTags] = useState(defaultTags);
+
+  const handleSave = () => {
+    toast({ title: 'ההגדרות נשמרו', description: 'ההעדפות עודכנו בהצלחה.' });
+  };
+
+  const handleAddCategory = () => {
+    const name = prompt('שם קטגוריה חדשה:');
+    if (name?.trim()) {
+      setCategories((prev) => [...prev, { id: crypto.randomUUID(), name: name.trim(), color: '#6b7280' }]);
+      toast({ title: 'קטגוריה נוספה', description: `"${name.trim()}" נוספה בהצלחה.` });
+    }
+  };
+
+  const handleAddTag = () => {
+    const name = prompt('שם תגית חדשה:');
+    if (name?.trim()) {
+      setTags((prev) => [...prev, { id: crypto.randomUUID(), name: name.trim() }]);
+      toast({ title: 'תגית נוספה', description: `"${name.trim()}" נוספה בהצלחה.` });
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
@@ -72,14 +98,14 @@ export default function SettingsPage() {
           <Label>קטגוריות</Label>
           <div className="flex flex-wrap gap-2 mt-2">
             {categories.map((c) => <Badge key={c.id} variant="secondary">{c.name}</Badge>)}
-            <Button variant="outline" size="sm" className="h-6 text-xs">+ הוסף</Button>
+            <Button variant="outline" size="sm" className="h-6 text-xs" onClick={handleAddCategory}>+ הוסף</Button>
           </div>
         </div>
         <div>
           <Label>תגיות</Label>
           <div className="flex flex-wrap gap-2 mt-2">
             {tags.map((t) => <Badge key={t.id} variant="outline">{t.name}</Badge>)}
-            <Button variant="outline" size="sm" className="h-6 text-xs">+ הוסף</Button>
+            <Button variant="outline" size="sm" className="h-6 text-xs" onClick={handleAddTag}>+ הוסף</Button>
           </div>
         </div>
       </section>
@@ -126,7 +152,7 @@ export default function SettingsPage() {
       </section>
 
       <div className="flex justify-start">
-        <Button>שמור הגדרות</Button>
+        <Button onClick={handleSave}>שמור הגדרות</Button>
       </div>
     </div>
   );

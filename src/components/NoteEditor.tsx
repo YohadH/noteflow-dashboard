@@ -16,6 +16,7 @@ interface NoteEditorProps {
   open: boolean;
   onClose: () => void;
   onSave: (note: Note) => void;
+  defaults?: Partial<Note>;
 }
 
 const defaultNote: Omit<Note, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -24,10 +25,11 @@ const defaultNote: Omit<Note, 'id' | 'createdAt' | 'updatedAt'> = {
   hasAlert: false, hasEmailAction: false,
 };
 
-export function NoteEditor({ note, open, onClose, onSave }: NoteEditorProps) {
+export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditorProps) {
   const isNew = !note;
   const [form, setForm] = useState(() => note ? { ...note } : {
     ...defaultNote,
+    ...defaults,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

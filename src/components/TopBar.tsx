@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Plus, Bell, User, Menu, X, Zap, LayoutDashboard, StickyNote, AlertTriangle, Mail, Flag, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNoteStore } from '@/stores/noteStore';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,8 @@ export function TopBar({ onNewNote }: TopBarProps) {
   const { searchQuery, setSearchQuery } = useNoteStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   return (
     <>
@@ -55,7 +58,7 @@ export function TopBar({ onNewNote }: TopBarProps) {
           <span className="hidden sm:inline">פתק חדש</span>
         </Button>
 
-        <button className="relative p-2 rounded-md hover:bg-muted">
+        <button className="relative p-2 rounded-md hover:bg-muted" onClick={() => navigate('/alerts')}>
           <Bell className="h-4.5 w-4.5 text-muted-foreground" />
           <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-priority-urgent rounded-full" />
         </button>
@@ -65,9 +68,9 @@ export function TopBar({ onNewNote }: TopBarProps) {
             <User className="h-4 w-4 text-primary-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem>פרופיל</DropdownMenuItem>
-            <DropdownMenuItem>הגדרות</DropdownMenuItem>
-            <DropdownMenuItem>התנתק</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast({ title: 'פרופיל', description: 'ניהול פרופיל יהיה זמין בקרוב.' })}>פרופיל</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>הגדרות</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast({ title: 'התנתקת', description: 'התנתקת בהצלחה.' })}>התנתק</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
