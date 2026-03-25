@@ -26,10 +26,10 @@ export function AppLayout() {
   const handleSaveNote = (note: Note) => {
     if (editingNote) {
       updateNote(note.id, note);
-      toast({ title: 'Note updated', description: `"${note.title}" has been saved.` });
+      toast({ title: 'הפתק עודכן', description: `"${note.title}" נשמר בהצלחה.` });
     } else {
       addNote(note);
-      toast({ title: 'Note created', description: `"${note.title}" has been added.` });
+      toast({ title: 'פתק נוצר', description: `"${note.title}" נוסף בהצלחה.` });
     }
   };
 

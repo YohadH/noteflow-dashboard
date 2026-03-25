@@ -59,68 +59,68 @@ export default function NotesPage() {
   const handleDelete = () => {
     if (deleteId) {
       deleteNote(deleteId);
-      toast({ title: 'Note deleted', variant: 'destructive' });
+      toast({ title: 'הפתק נמחק', variant: 'destructive' });
       setDeleteId(null);
     }
   };
 
   const handleArchive = (id: string) => {
     updateNote(id, { status: 'archived' });
-    toast({ title: 'Note archived' });
+    toast({ title: 'הפתק הועבר לארכיון' });
   };
 
   return (
     <div className="space-y-5 max-w-7xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Notes</h1>
-          <p className="text-sm text-muted-foreground mt-1">{filtered.length} notes</p>
+          <h1 className="text-2xl font-semibold tracking-tight">פתקים</h1>
+          <p className="text-sm text-muted-foreground mt-1">{filtered.length} פתקים</p>
         </div>
         <Button onClick={onNewNote} className="gap-1.5">
           <Plus className="h-4 w-4" />
-          New Note
+          פתק חדש
         </Button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Filter notes..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="סנן פתקים..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9 h-9" />
         </div>
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-32 h-9"><SelectValue placeholder="Priority" /></SelectTrigger>
+          <SelectTrigger className="w-32 h-9"><SelectValue placeholder="עדיפות" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All priorities</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="all">כל העדיפויות</SelectItem>
+            <SelectItem value="urgent">דחוף</SelectItem>
+            <SelectItem value="high">גבוה</SelectItem>
+            <SelectItem value="medium">בינוני</SelectItem>
+            <SelectItem value="low">נמוך</SelectItem>
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-32 h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-32 h-9"><SelectValue placeholder="סטטוס" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
+            <SelectItem value="all">כל הסטטוסים</SelectItem>
+            <SelectItem value="active">פעיל</SelectItem>
+            <SelectItem value="completed">הושלם</SelectItem>
+            <SelectItem value="archived">בארכיון</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
           <SelectTrigger className="w-32 h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="newest">Newest</SelectItem>
-            <SelectItem value="oldest">Oldest</SelectItem>
-            <SelectItem value="priority">Priority</SelectItem>
-            <SelectItem value="dueDate">Due Date</SelectItem>
+            <SelectItem value="newest">חדש ביותר</SelectItem>
+            <SelectItem value="oldest">ישן ביותר</SelectItem>
+            <SelectItem value="priority">עדיפות</SelectItem>
+            <SelectItem value="dueDate">תאריך יעד</SelectItem>
           </SelectContent>
         </Select>
         <div className="flex border rounded-md">
-          <button onClick={() => setView('grid')} className={cn('p-2 rounded-l-md', view === 'grid' ? 'bg-muted' : 'hover:bg-muted/50')}>
+          <button onClick={() => setView('grid')} className={cn('p-2 rounded-r-md', view === 'grid' ? 'bg-muted' : 'hover:bg-muted/50')}>
             <LayoutGrid className="h-4 w-4" />
           </button>
-          <button onClick={() => setView('list')} className={cn('p-2 rounded-r-md', view === 'list' ? 'bg-muted' : 'hover:bg-muted/50')}>
+          <button onClick={() => setView('list')} className={cn('p-2 rounded-l-md', view === 'list' ? 'bg-muted' : 'hover:bg-muted/50')}>
             <List className="h-4 w-4" />
           </button>
         </div>
@@ -129,7 +129,7 @@ export default function NotesPage() {
       {/* Pinned */}
       {pinnedNotes.length > 0 && (
         <div>
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Pinned</h2>
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">נעוצים</h2>
           <div className={cn(view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3' : 'space-y-2')}>
             {pinnedNotes.map((n) => (
               <NoteCard key={n.id} note={n} view={view} onEdit={onEditNote} onDelete={setDeleteId} onArchive={handleArchive} />
@@ -147,20 +147,20 @@ export default function NotesPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-muted-foreground">No notes match your filters</p>
-          <Button variant="outline" className="mt-4" onClick={onNewNote}>Create a note</Button>
+          <p className="text-muted-foreground">אין פתקים התואמים את הסינון</p>
+          <Button variant="outline" className="mt-4" onClick={onNewNote}>צור פתק</Button>
         </div>
       ) : null}
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete note?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>למחוק את הפתק?</AlertDialogTitle>
+            <AlertDialogDescription>פעולה זו אינה ניתנת לביטול.</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">מחק</AlertDialogAction>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
