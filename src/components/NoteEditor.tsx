@@ -54,37 +54,37 @@ export function NoteEditor({ note, open, onClose, onSave }: NoteEditorProps) {
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {isNew ? 'New Note' : 'Edit Note'}
-            {dirty && <span className="text-xs bg-status-pending/10 text-status-pending px-2 py-0.5 rounded-full">Unsaved</span>}
+            {isNew ? 'פתק חדש' : 'עריכת פתק'}
+            {dirty && <span className="text-xs bg-status-pending/10 text-status-pending px-2 py-0.5 rounded-full">לא נשמר</span>}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
           <div>
-            <Label>Title</Label>
-            <Input value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="Note title..." className="mt-1.5" />
+            <Label>כותרת</Label>
+            <Input value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="כותרת הפתק..." className="mt-1.5" />
           </div>
 
           <div>
-            <Label>Content</Label>
-            <Textarea value={form.content} onChange={(e) => update('content', e.target.value)} placeholder="Write your note..." rows={6} className="mt-1.5 font-mono text-sm" />
+            <Label>תוכן</Label>
+            <Textarea value={form.content} onChange={(e) => update('content', e.target.value)} placeholder="כתוב את הפתק שלך..." rows={6} className="mt-1.5 font-mono text-sm" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Priority</Label>
+              <Label>עדיפות</Label>
               <Select value={form.priority} onValueChange={(v) => update('priority', v as Priority)}>
                 <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="low">נמוך</SelectItem>
+                  <SelectItem value="medium">בינוני</SelectItem>
+                  <SelectItem value="high">גבוה</SelectItem>
+                  <SelectItem value="urgent">דחוף</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Category</Label>
+              <Label>קטגוריה</Label>
               <Select value={form.category} onValueChange={(v) => update('category', v)}>
                 <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -96,17 +96,17 @@ export function NoteEditor({ note, open, onClose, onSave }: NoteEditorProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Due Date</Label>
+              <Label>תאריך יעד</Label>
               <Input type="date" value={form.dueDate?.slice(0, 10) ?? ''} onChange={(e) => update('dueDate', e.target.value ? new Date(e.target.value).toISOString() : undefined)} className="mt-1.5" />
             </div>
             <div>
-              <Label>Reminder</Label>
+              <Label>תזכורת</Label>
               <Input type="datetime-local" value={form.reminderAt?.slice(0, 16) ?? ''} onChange={(e) => update('reminderAt', e.target.value ? new Date(e.target.value).toISOString() : undefined)} className="mt-1.5" />
             </div>
           </div>
 
           <div>
-            <Label>Tags</Label>
+            <Label>תגיות</Label>
             <div className="flex flex-wrap gap-2 mt-1.5">
               {allTags.map((t) => (
                 <Badge
@@ -116,7 +116,7 @@ export function NoteEditor({ note, open, onClose, onSave }: NoteEditorProps) {
                   onClick={() => toggleTag(t.name)}
                 >
                   {t.name}
-                  {form.tags.includes(t.name) && <X className="h-3 w-3 ml-1" />}
+                  {form.tags.includes(t.name) && <X className="h-3 w-3 mr-1" />}
                 </Badge>
               ))}
             </div>
@@ -125,23 +125,23 @@ export function NoteEditor({ note, open, onClose, onSave }: NoteEditorProps) {
           <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2 text-sm">
               <Switch checked={form.pinned} onCheckedChange={(v) => update('pinned', v)} />
-              <Pin className="h-4 w-4" /> Pinned
+              <Pin className="h-4 w-4" /> נעוץ
             </label>
             <label className="flex items-center gap-2 text-sm">
               <Switch checked={form.hasAlert} onCheckedChange={(v) => update('hasAlert', v)} />
-              <AlertTriangle className="h-4 w-4" /> Alert
+              <AlertTriangle className="h-4 w-4" /> התראה
             </label>
             <label className="flex items-center gap-2 text-sm">
               <Switch checked={form.hasEmailAction} onCheckedChange={(v) => update('hasEmailAction', v)} />
-              <Mail className="h-4 w-4" /> Email Action
+              <Mail className="h-4 w-4" /> פעולת אימייל
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2 border-t">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <div className="flex justify-start gap-3 pt-2 border-t">
             <Button onClick={handleSave}>
-              {isNew ? 'Create Note' : 'Save Changes'}
+              {isNew ? 'צור פתק' : 'שמור שינויים'}
             </Button>
+            <Button variant="outline" onClick={onClose}>ביטול</Button>
           </div>
         </div>
       </DialogContent>

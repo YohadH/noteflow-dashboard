@@ -10,20 +10,20 @@ export default function RemindersPage() {
   const { reminders, toggleReminderComplete, snoozeReminder } = useNoteStore();
   const { toast } = useToast();
 
-  const today = reminders.filter((r) => !r.completed && formatDate(r.reminderAt) === 'Today');
-  const overdue = reminders.filter((r) => !r.completed && new Date(r.reminderAt) < new Date() && formatDate(r.reminderAt) !== 'Today');
-  const upcoming = reminders.filter((r) => !r.completed && new Date(r.reminderAt) > new Date() && formatDate(r.reminderAt) !== 'Today');
+  const today = reminders.filter((r) => !r.completed && formatDate(r.reminderAt) === 'היום');
+  const overdue = reminders.filter((r) => !r.completed && new Date(r.reminderAt) < new Date() && formatDate(r.reminderAt) !== 'היום');
+  const upcoming = reminders.filter((r) => !r.completed && new Date(r.reminderAt) > new Date() && formatDate(r.reminderAt) !== 'היום');
   const completed = reminders.filter((r) => r.completed);
 
   const handleSnooze = (id: string) => {
     const tomorrow = new Date(Date.now() + 86400000).toISOString();
     snoozeReminder(id, tomorrow);
-    toast({ title: 'Reminder snoozed until tomorrow' });
+    toast({ title: 'התזכורת נדחתה למחר' });
   };
 
   const handleComplete = (id: string) => {
     toggleReminderComplete(id);
-    toast({ title: 'Reminder marked as done' });
+    toast({ title: 'התזכורת סומנה כבוצעה' });
   };
 
   const Section = ({ title, icon, items, emptyText }: { title: string; icon: React.ReactNode; items: typeof reminders; emptyText: string }) => (
@@ -60,15 +60,15 @@ export default function RemindersPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Reminders</h1>
-        <p className="text-sm text-muted-foreground mt-1">Stay on top of your schedule</p>
+        <h1 className="text-2xl font-semibold tracking-tight">תזכורות</h1>
+        <p className="text-sm text-muted-foreground mt-1">הישאר מעודכן עם לוח הזמנים שלך</p>
       </div>
 
       <div className="space-y-4">
-        {overdue.length > 0 && <Section title="Overdue" icon={<Clock className="h-4 w-4 text-priority-urgent" />} items={overdue} emptyText="" />}
-        <Section title="Today" icon={<Clock className="h-4 w-4 text-priority-high" />} items={today} emptyText="No reminders for today" />
-        <Section title="Upcoming" icon={<Clock className="h-4 w-4 text-primary" />} items={upcoming} emptyText="No upcoming reminders" />
-        <Section title="Completed" icon={<Check className="h-4 w-4 text-status-completed" />} items={completed} emptyText="No completed reminders" />
+        {overdue.length > 0 && <Section title="באיחור" icon={<Clock className="h-4 w-4 text-priority-urgent" />} items={overdue} emptyText="" />}
+        <Section title="היום" icon={<Clock className="h-4 w-4 text-priority-high" />} items={today} emptyText="אין תזכורות להיום" />
+        <Section title="קרובות" icon={<Clock className="h-4 w-4 text-primary" />} items={upcoming} emptyText="אין תזכורות קרובות" />
+        <Section title="הושלמו" icon={<Check className="h-4 w-4 text-status-completed" />} items={completed} emptyText="אין תזכורות שהושלמו" />
       </div>
     </div>
   );

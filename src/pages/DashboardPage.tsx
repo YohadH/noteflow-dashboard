@@ -17,33 +17,33 @@ export default function DashboardPage() {
   const { onEditNote, onNewNote } = useOutletContext<LayoutContext>();
 
   const activeNotes = notes.filter((n) => n.status === 'active');
-  const dueToday = activeNotes.filter((n) => n.dueDate && formatDate(n.dueDate) === 'Today');
+  const dueToday = activeNotes.filter((n) => n.dueDate && formatDate(n.dueDate) === 'היום');
   const highPriority = activeNotes.filter((n) => n.priority === 'high' || n.priority === 'urgent');
   const upcomingReminders = reminders.filter((r) => !r.completed).slice(0, 5);
   const recentNotes = [...notes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
   const pendingAlerts = alerts.filter((a) => a.status === 'active' || a.status === 'scheduled');
 
   const stats = [
-    { label: 'Total Notes', value: notes.length, icon: StickyNote, color: 'text-primary' },
-    { label: 'Due Today', value: dueToday.length, icon: Clock, color: 'text-priority-high' },
-    { label: 'High Priority', value: highPriority.length, icon: Flag, color: 'text-priority-urgent' },
-    { label: 'Upcoming Reminders', value: upcomingReminders.length, icon: Bell, color: 'text-priority-medium' },
-    { label: 'Pending Alerts', value: pendingAlerts.length, icon: AlertTriangle, color: 'text-status-pending' },
-    { label: 'Email Actions', value: emailActions.length, icon: Mail, color: 'text-primary' },
+    { label: 'סה״כ פתקים', value: notes.length, icon: StickyNote, color: 'text-primary' },
+    { label: 'לביצוע היום', value: dueToday.length, icon: Clock, color: 'text-priority-high' },
+    { label: 'עדיפות גבוהה', value: highPriority.length, icon: Flag, color: 'text-priority-urgent' },
+    { label: 'תזכורות קרובות', value: upcomingReminders.length, icon: Bell, color: 'text-priority-medium' },
+    { label: 'התראות ממתינות', value: pendingAlerts.length, icon: AlertTriangle, color: 'text-status-pending' },
+    { label: 'פעולות אימייל', value: emailActions.length, icon: Mail, color: 'text-primary' },
   ];
 
   const quickActions = [
-    { label: 'Add Note', icon: Plus, action: onNewNote },
-    { label: 'Set Reminder', icon: Bell, action: () => {} },
-    { label: 'Create Alert', icon: AlertTriangle, action: () => {} },
-    { label: 'Draft Email', icon: Mail, action: () => {} },
+    { label: 'הוסף פתק', icon: Plus, action: onNewNote },
+    { label: 'הגדר תזכורת', icon: Bell, action: () => {} },
+    { label: 'צור התראה', icon: AlertTriangle, action: () => {} },
+    { label: 'טיוטת אימייל', icon: Mail, action: () => {} },
   ];
 
   return (
     <div className="space-y-6 max-w-7xl">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Your productivity at a glance</p>
+        <h1 className="text-2xl font-semibold tracking-tight">לוח בקרה</h1>
+        <p className="text-sm text-muted-foreground mt-1">הפרודוקטיביות שלך במבט אחד</p>
       </div>
 
       {/* Stats grid */}
@@ -74,11 +74,11 @@ export default function DashboardPage() {
         <div className="bg-card rounded-lg border p-5 shadow-card">
           <h2 className="font-medium text-sm mb-4 flex items-center gap-2">
             <Flag className="h-4 w-4 text-priority-urgent" />
-            Today's Priorities
+            עדיפויות להיום
           </h2>
           <div className="space-y-3">
             {highPriority.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No high priority items</p>
+              <p className="text-sm text-muted-foreground">אין פריטים בעדיפות גבוהה</p>
             ) : (
               highPriority.slice(0, 4).map((note) => (
                 <div key={note.id} onClick={() => onEditNote(note)} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors">
@@ -94,11 +94,11 @@ export default function DashboardPage() {
         <div className="bg-card rounded-lg border p-5 shadow-card">
           <h2 className="font-medium text-sm mb-4 flex items-center gap-2">
             <Bell className="h-4 w-4 text-primary" />
-            Upcoming Reminders
+            תזכורות קרובות
           </h2>
           <div className="space-y-3">
             {upcomingReminders.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No upcoming reminders</p>
+              <p className="text-sm text-muted-foreground">אין תזכורות קרובות</p>
             ) : (
               upcomingReminders.map((r) => (
                 <div key={r.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
@@ -117,7 +117,7 @@ export default function DashboardPage() {
         <div className="bg-card rounded-lg border p-5 shadow-card">
           <h2 className="font-medium text-sm mb-4 flex items-center gap-2">
             <StickyNote className="h-4 w-4 text-primary" />
-            Recent Notes
+            פתקים אחרונים
           </h2>
           <div className="space-y-3">
             {recentNotes.map((note) => (

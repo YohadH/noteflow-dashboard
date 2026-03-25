@@ -37,8 +37,8 @@ export default function PriorityViewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Priority View</h1>
-        <p className="text-sm text-muted-foreground mt-1">Drag notes between columns to change priority</p>
+        <h1 className="text-2xl font-semibold tracking-tight">תצוגת עדיפות</h1>
+        <p className="text-sm text-muted-foreground mt-1">גרור פתקים בין עמודות לשינוי עדיפות</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -77,7 +77,7 @@ export default function PriorityViewPage() {
                   </div>
                 ))}
                 {items.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-8">Drop notes here</p>
+                  <p className="text-xs text-muted-foreground text-center py-8">שחרר פתקים כאן</p>
                 )}
               </div>
             </div>

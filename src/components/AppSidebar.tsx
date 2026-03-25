@@ -7,13 +7,13 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { label: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { label: 'Notes', path: '/notes', icon: StickyNote },
-  { label: 'Reminders', path: '/reminders', icon: Bell },
-  { label: 'Alerts', path: '/alerts', icon: AlertTriangle },
-  { label: 'Email Actions', path: '/email-actions', icon: Mail },
-  { label: 'Priority View', path: '/priorities', icon: Flag },
-  { label: 'Settings', path: '/settings', icon: Settings },
+  { label: 'לוח בקרה', path: '/', icon: LayoutDashboard },
+  { label: 'פתקים', path: '/notes', icon: StickyNote },
+  { label: 'תזכורות', path: '/reminders', icon: Bell },
+  { label: 'התראות', path: '/alerts', icon: AlertTriangle },
+  { label: 'פעולות אימייל', path: '/email-actions', icon: Mail },
+  { label: 'תצוגת עדיפות', path: '/priorities', icon: Flag },
+  { label: 'הגדרות', path: '/settings', icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -22,7 +22,7 @@ export function AppSidebar() {
 
   return (
     <aside className={cn(
-      'hidden md:flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 h-screen sticky top-0',
+      'hidden md:flex flex-col bg-sidebar border-l border-sidebar-border transition-all duration-300 h-screen sticky top-0',
       collapsed ? 'w-16' : 'w-60'
     )}>
       <div className={cn('flex items-center gap-2 px-4 h-14 border-b border-sidebar-border', collapsed && 'justify-center')}>
@@ -59,7 +59,7 @@ export function AppSidebar() {
         onClick={() => setCollapsed(!collapsed)}
         className="flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground transition-colors"
       >
-        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        {collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </button>
     </aside>
   );
