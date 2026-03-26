@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, useNavigate, Navigate } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { NoteEditor } from './NoteEditor';
 import { useNoteStore } from '@/stores/noteStore';
+import { useUserStore } from '@/stores/userStore';
 import { Note } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,9 +12,21 @@ export function AppLayout() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [editorDefaults, setEditorDefaults] = useState<Partial<Note>>({});
-  const { addNote, updateNote } = useNoteStore();
+  const { addNote, updateNote, saveUserData, notes, reminders, alerts, emailActions } = useNoteStore();
+  const currentUser = useUserStore((s) => s.currentUser);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Auto-save data when it changes
+  useEffect(() => {
+    if (currentUser) {
+      saveUserData(currentUser.id);
+    }
+  }, [currentUser, notes, reminders, alerts, emailActions, saveUserData]);
+
+  if (!currentUser) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const handleNewNote = (defaults?: Partial<Note>) => {
     setEditingNote(null);
