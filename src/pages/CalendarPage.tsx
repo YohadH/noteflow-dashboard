@@ -73,7 +73,7 @@ export default function CalendarPage() {
             month={month}
             onMonthChange={setMonth}
             locale={he}
-            dir="rtl"
+            dir="ltr"
             className={cn("p-3 pointer-events-auto")}
             modifiers={{
               hasNotes: datesWithNotes,
