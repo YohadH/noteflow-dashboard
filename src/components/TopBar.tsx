@@ -76,9 +76,16 @@ export function TopBar({ onNewNote }: TopBarProps) {
             <User className="h-4 w-4 text-primary-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => toast({ title: 'פרופיל', description: 'ניהול פרופיל יהיה זמין בקרוב.' })}>פרופיל</DropdownMenuItem>
+            {currentUser && (
+              <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                {currentUser.name} ({currentUser.email})
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => navigate('/settings')}>הגדרות</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast({ title: 'התנתקת', description: 'התנתקת בהצלחה.' })}>התנתק</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+              <LogOut className="h-4 w-4 ml-2" />
+              התנתק
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
