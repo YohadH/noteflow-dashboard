@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Plus, Bell, User, Menu, X, Zap, LayoutDashboard, StickyNote, AlertTriangle, Mail, Flag, Settings } from 'lucide-react';
+import { Search, Plus, Bell, User, Menu, X, Zap, LayoutDashboard, StickyNote, AlertTriangle, Mail, Flag, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNoteStore } from '@/stores/noteStore';
+import { useUserStore } from '@/stores/userStore';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -29,10 +30,17 @@ interface TopBarProps {
 
 export function TopBar({ onNewNote }: TopBarProps) {
   const { searchQuery, setSearchQuery } = useNoteStore();
+  const { currentUser, logout } = useUserStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+    toast({ title: 'התנתקת', description: 'התנתקת בהצלחה.' });
+  };
 
   return (
     <>
@@ -68,9 +76,16 @@ export function TopBar({ onNewNote }: TopBarProps) {
             <User className="h-4 w-4 text-primary-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => toast({ title: 'פרופיל', description: 'ניהול פרופיל יהיה זמין בקרוב.' })}>פרופיל</DropdownMenuItem>
+            {currentUser && (
+              <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                {currentUser.name} ({currentUser.email})
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => navigate('/settings')}>הגדרות</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast({ title: 'התנתקת', description: 'התנתקת בהצלחה.' })}>התנתק</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+              <LogOut className="h-4 w-4 ml-2" />
+              התנתק
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>

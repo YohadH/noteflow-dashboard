@@ -11,6 +11,7 @@ import EmailActionsPage from "@/pages/EmailActionsPage";
 import PriorityViewPage from "@/pages/PriorityViewPage";
 import SettingsPage from "@/pages/SettingsPage";
 import CalendarPage from "@/pages/CalendarPage";
+import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
       <Toaster />
       <BrowserRouter>
         <Routes>
+          <Route path="/auth" element={<AuthPage />} />
           <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/notes" element={<NotesPage />} />
