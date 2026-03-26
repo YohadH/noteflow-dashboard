@@ -30,10 +30,17 @@ interface TopBarProps {
 
 export function TopBar({ onNewNote }: TopBarProps) {
   const { searchQuery, setSearchQuery } = useNoteStore();
+  const { currentUser, logout } = useUserStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+    toast({ title: 'התנתקת', description: 'התנתקת בהצלחה.' });
+  };
 
   return (
     <>
