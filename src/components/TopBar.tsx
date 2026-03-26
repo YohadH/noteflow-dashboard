@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Plus, Bell, User, Menu, X, Zap, LayoutDashboard, StickyNote, AlertTriangle, Mail, Flag, Settings } from 'lucide-react';
+import { Search, Plus, Bell, User, Menu, X, Zap, LayoutDashboard, StickyNote, AlertTriangle, Mail, Flag, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNoteStore } from '@/stores/noteStore';
+import { useUserStore } from '@/stores/userStore';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
