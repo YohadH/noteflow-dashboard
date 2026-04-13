@@ -30,7 +30,7 @@ const CURRENT_USER_KEY = 'app_current_user';
     users.push(testUser);
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
     const passwords: Record<string, string> = JSON.parse(localStorage.getItem(PASSWORDS_KEY) || '{}');
-    passwords[id] = '123';
+    passwords[id] = '1234';
     localStorage.setItem(PASSWORDS_KEY, JSON.stringify(passwords));
   }
 })();
