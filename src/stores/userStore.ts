@@ -21,6 +21,20 @@ const USERS_KEY = 'app_users';
 const PASSWORDS_KEY = 'app_passwords';
 const CURRENT_USER_KEY = 'app_current_user';
 
+// Seed a default test user
+(function seedTestUser() {
+  const users: LocalUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+  if (!users.find(u => u.email === 'test@gmail.com')) {
+    const id = crypto.randomUUID();
+    const testUser: LocalUser = { id, name: 'Test User', email: 'test@gmail.com', createdAt: new Date().toISOString() };
+    users.push(testUser);
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    const passwords: Record<string, string> = JSON.parse(localStorage.getItem(PASSWORDS_KEY) || '{}');
+    passwords[id] = '123';
+    localStorage.setItem(PASSWORDS_KEY, JSON.stringify(passwords));
+  }
+})();
+
 function getStoredUsers(): LocalUser[] {
   try {
     return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
