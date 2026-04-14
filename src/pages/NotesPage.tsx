@@ -112,8 +112,8 @@ export default function NotesPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 max-w-xs">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="relative w-full sm:flex-1 sm:max-w-xs">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="סנן פתקים..."
@@ -123,7 +123,7 @@ export default function NotesPage() {
           />
         </div>
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-32 h-9">
+          <SelectTrigger className="w-[calc(50%-4px)] sm:w-32 h-9">
             <SelectValue placeholder="עדיפות" />
           </SelectTrigger>
           <SelectContent>
@@ -135,7 +135,7 @@ export default function NotesPage() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-32 h-9">
+          <SelectTrigger className="w-[calc(50%-4px)] sm:w-32 h-9">
             <SelectValue placeholder="סטטוס" />
           </SelectTrigger>
           <SelectContent>
@@ -146,7 +146,7 @@ export default function NotesPage() {
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortBy)}>
-          <SelectTrigger className="w-32 h-9">
+          <SelectTrigger className="w-[calc(50%-4px)] sm:w-32 h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

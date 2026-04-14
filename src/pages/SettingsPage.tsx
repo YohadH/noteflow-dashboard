@@ -489,7 +489,7 @@ export default function SettingsPage() {
           </label>
         </div>
         <div className="border-t pt-4 space-y-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium flex items-center gap-2">
                 <Smartphone className="h-4 w-4" />
@@ -500,13 +500,14 @@ export default function SettingsPage() {
               </p>
             </div>
             {isCurrentDeviceSubscribed ? (
-              <Button variant="outline" onClick={() => void handleDisablePush()} disabled={isPushBusy || isSaving}>
+              <Button variant="outline" onClick={() => void handleDisablePush()} disabled={isPushBusy || isSaving} className="shrink-0 w-full sm:w-auto">
                 נתק מהמכשיר הזה
               </Button>
             ) : (
               <Button
                 onClick={() => void handleEnablePush()}
                 disabled={isPushBusy || isSaving || !pushSupported || !hasPushPublicKey}
+                className="shrink-0 w-full sm:w-auto"
               >
                 הפעל במכשיר הזה
               </Button>
@@ -526,7 +527,7 @@ export default function SettingsPage() {
         <h2 className="font-medium flex items-center gap-2">
           <Bell className="h-4 w-4" /> ברירות מחדל לתזכורות
         </h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>שעת תזכורת ברירת מחדל</Label>
             <Select
@@ -618,27 +619,27 @@ export default function SettingsPage() {
           <Plug className="h-4 w-4" /> אינטגרציות
         </h2>
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 border rounded-md gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-3">
+            <div className="shrink-0">
               <p className="text-sm font-medium">נקודת קצה API</p>
               <p className="text-xs text-muted-foreground">התחבר ל-API של הבקאנד</p>
             </div>
             <Input
               placeholder="https://api.example.com"
-              className="w-64"
+              className="w-full sm:w-64"
               value={form.apiEndpoint || ''}
               onChange={(event) => setForm((current) => ({ ...current, apiEndpoint: event.target.value }))}
               disabled={isSaving}
             />
           </div>
-          <div className="flex items-center justify-between p-3 border rounded-md gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-3">
+            <div className="shrink-0">
               <p className="text-sm font-medium">Webhook של הלוח הפעיל</p>
               <p className="text-xs text-muted-foreground">כל המשתמשים בלוח הזה ישלחו התראות לאותה כתובת webhook</p>
             </div>
             <Input
               placeholder="https://hooks.example.com"
-              className="w-64"
+              className="w-full sm:w-64"
               value={form.webhookUrl || ''}
               onChange={(event) => setForm((current) => ({ ...current, webhookUrl: event.target.value }))}
               disabled={!canEditBoardWebhook || isSaving}
@@ -666,14 +667,14 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center justify-between p-3 border rounded-md gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-3">
+            <div className="shrink-0">
               <p className="text-sm font-medium">ספק אימייל</p>
               <p className="text-xs text-muted-foreground">SMTP / SendGrid / Resend</p>
             </div>
             <Input
               placeholder="Resend"
-              className="w-64"
+              className="w-full sm:w-64"
               value={form.emailProvider || ''}
               onChange={(event) => setForm((current) => ({ ...current, emailProvider: event.target.value }))}
               disabled={isSaving}

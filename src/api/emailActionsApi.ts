@@ -43,7 +43,7 @@ export const emailActionsApi = {
       throw error;
     }
 
-    return ((data as EmailActionQueryRow[] | null) || []).map((row) =>
+    return ((data as unknown as EmailActionQueryRow[] | null) || []).map((row) =>
       mapEmailAction(
         {
           id: row.id,

@@ -24,7 +24,7 @@ export default function EmailActionsPage() {
         <p className="text-sm text-muted-foreground mt-1">ניהול פעולות אימייל המקושרות לפתקים. השליחה מטופלת על ידי הבקאנד.</p>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* List */}
         <div className="flex-1 space-y-4">
           {statusGroups.map((group) => group.items.length > 0 && (
