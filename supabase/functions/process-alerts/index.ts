@@ -1,5 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import webpush from 'npm:web-push@3.6.7';
+import { createClient } from '@supabase/supabase-js';
+import * as webpush from 'web-push';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -8,10 +8,6 @@ const vapidSubject = Deno.env.get('WEB_PUSH_VAPID_SUBJECT') || '';
 const vapidPublicKey = Deno.env.get('WEB_PUSH_VAPID_PUBLIC_KEY') || '';
 const vapidPrivateKey = Deno.env.get('WEB_PUSH_VAPID_PRIVATE_KEY') || '';
 const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-if (vapidSubject && vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-}
 
 type AlertRow = {
   id: string;
@@ -179,6 +175,12 @@ async function deliverPushNotifications(
 
   if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
     throw new Error('Web Push VAPID secrets are not configured.');
+  }
+
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to initialize Web Push VAPID configuration.');
   }
 
   const payload = JSON.stringify({
