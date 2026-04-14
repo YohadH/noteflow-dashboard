@@ -1,0 +1,2 @@
+[functions.receive-alert-webhook]
+verify_jwt = false

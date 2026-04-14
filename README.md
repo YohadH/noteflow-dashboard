@@ -15,6 +15,7 @@ The frontend is now wired to a Supabase backend while keeping the existing UI in
    - [supabase/migrations/20260415_board_webhooks.sql](supabase/migrations/20260415_board_webhooks.sql)
    - [supabase/migrations/20260416_fix_board_rls_recursion.sql](supabase/migrations/20260416_fix_board_rls_recursion.sql)
    - [supabase/migrations/20260417_web_push_support.sql](supabase/migrations/20260417_web_push_support.sql)
+   - [supabase/migrations/20260418_received_alert_webhooks.sql](supabase/migrations/20260418_received_alert_webhooks.sql)
 4. Run the app with `npm run dev`.
 
 ## What Was Added
@@ -36,6 +37,7 @@ The frontend is now wired to a Supabase backend while keeping the existing UI in
 - Workers:
   - [supabase/functions/process-alerts/index.ts](supabase/functions/process-alerts/index.ts)
   - [supabase/functions/process-email-actions/index.ts](supabase/functions/process-email-actions/index.ts)
+  - [supabase/functions/receive-alert-webhook/index.ts](supabase/functions/receive-alert-webhook/index.ts)
 
 ## Notes
 
@@ -51,3 +53,9 @@ The frontend is now wired to a Supabase backend while keeping the existing UI in
   - Optionally set a bearer token for your receiver: `supabase secrets set ALERT_WEBHOOK_AUTH_TOKEN=your-token`
   - Schedule the function to run periodically, or invoke it from your own job runner.
 - Webhook payloads are sent as JSON with `x-noteflow-event: note.alert.triggered` and `x-noteflow-alert-id: <alert-id>` headers.
+- To receive webhook payloads inside the same Supabase project:
+  - Deploy `receive-alert-webhook`
+  - Use `https://<your-project-ref>.supabase.co/functions/v1/receive-alert-webhook` as the board webhook URL
+  - Keep JWT verification disabled for `receive-alert-webhook` so server-to-server calls from `process-alerts` are accepted
+  - If `ALERT_WEBHOOK_AUTH_TOKEN` is set, the receiver validates the same bearer token
+  - Received webhook calls are stored in `public.received_alert_webhooks`
