@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Note, Priority, NoteStatus } from '@/types';
+import { useEffect, useState } from 'react';
+import type { Note, Priority } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,61 +7,132 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { categories, tags as allTags } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
-import { X, Pin, Bell, Mail, AlertTriangle } from 'lucide-react';
+import { X, Pin, Mail, AlertTriangle } from 'lucide-react';
+import { useNoteStore } from '@/stores/noteStore';
 
 interface NoteEditorProps {
   note?: Note | null;
   open: boolean;
   onClose: () => void;
-  onSave: (note: Note) => void;
+  onSave: (note: Note) => Promise<void> | void;
   defaults?: Partial<Note>;
 }
 
 const defaultNote: Omit<Note, 'id' | 'createdAt' | 'updatedAt'> = {
-  title: '', content: '', priority: 'medium', status: 'active',
-  tags: [], category: 'Projects', pinned: false,
-  hasAlert: false, hasEmailAction: false,
+  title: '',
+  content: '',
+  priority: 'medium',
+  status: 'active',
+  tags: [],
+  category: '',
+  pinned: false,
+  hasAlert: false,
+  hasEmailAction: false,
 };
 
-export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditorProps) {
-  const isNew = !note;
-  const [form, setForm] = useState(() => note ? { ...note } : {
-    ...defaultNote,
-    ...defaults,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  } as Note);
-  const [dirty, setDirty] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setForm(note ? { ...note } : {
+function buildDraft(note?: Note | null, defaults?: Partial<Note>) {
+  return (note
+    ? { ...note }
+    : {
         ...defaultNote,
         ...defaults,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      } as Note);
-      setDirty(false);
+      }) as Note;
+}
+
+function toDateInputValue(iso?: string) {
+  if (!iso) {
+    return '';
+  }
+
+  const date = new Date(iso);
+  const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return shifted.toISOString().slice(0, 10);
+}
+
+function toDateTimeLocalValue(iso?: string) {
+  if (!iso) {
+    return '';
+  }
+
+  const date = new Date(iso);
+  const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return shifted.toISOString().slice(0, 16);
+}
+
+function fromDateTimeLocalValue(value: string) {
+  return value ? new Date(value).toISOString() : undefined;
+}
+
+function getFutureDateTimeFloor() {
+  const nextMinute = new Date(Date.now() + 60000);
+  nextMinute.setSeconds(0, 0);
+  return toDateTimeLocalValue(nextMinute.toISOString());
+}
+
+export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditorProps) {
+  const categories = useNoteStore((state) => state.categories);
+  const allTags = useNoteStore((state) => state.tags);
+  const isNew = !note;
+  const [form, setForm] = useState<Note>(() => buildDraft(note, defaults));
+  const [dirty, setDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [minReminderAt, setMinReminderAt] = useState(() => getFutureDateTimeFloor());
+
+  useEffect(() => {
+    if (!open) {
+      return;
     }
+
+    setMinReminderAt(getFutureDateTimeFloor());
+    setForm(buildDraft(note, defaults));
+    setDirty(false);
+    setIsSaving(false);
+    setValidationError(null);
   }, [open, note, defaults]);
 
-  const update = <K extends keyof Note>(key: K, val: Note[K]) => {
-    setForm((f) => ({ ...f, [key]: val }));
+  useEffect(() => {
+    if (!open || form.category || !categories.length) {
+      return;
+    }
+
+    setForm((current) => ({ ...current, category: categories[0].name }));
+  }, [categories, form.category, open]);
+
+  const update = <K extends keyof Note>(key: K, value: Note[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
     setDirty(true);
+    setValidationError(null);
   };
 
-  const toggleTag = (tag: string) => {
-    const tags = form.tags.includes(tag) ? form.tags.filter((t) => t !== tag) : [...form.tags, tag];
-    update('tags', tags);
+  const toggleTag = (tagName: string) => {
+    const nextTags = form.tags.includes(tagName)
+      ? form.tags.filter((tag) => tag !== tagName)
+      : [...form.tags, tagName];
+
+    update('tags', nextTags);
   };
 
-  const handleSave = () => {
-    onSave({ ...form, updatedAt: new Date().toISOString() });
-    onClose();
+  const handleSave = async () => {
+    if (form.reminderAt && new Date(form.reminderAt).getTime() <= Date.now()) {
+      setValidationError('שעת התזכורת חייבת להיות בעתיד.');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      await onSave({ ...form, updatedAt: new Date().toISOString() });
+      onClose();
+    } catch {
+      // The parent already handles user-facing error feedback.
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -70,26 +141,43 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isNew ? 'פתק חדש' : 'עריכת פתק'}
-            {dirty && <span className="text-xs bg-status-pending/10 text-status-pending px-2 py-0.5 rounded-full">לא נשמר</span>}
+            {dirty && (
+              <span className="text-xs bg-status-pending/10 text-status-pending px-2 py-0.5 rounded-full">
+                לא נשמר
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
           <div>
             <Label>כותרת</Label>
-            <Input value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="כותרת הפתק..." className="mt-1.5" />
+            <Input
+              value={form.title}
+              onChange={(event) => update('title', event.target.value)}
+              placeholder="כותרת הפתק..."
+              className="mt-1.5"
+            />
           </div>
 
           <div>
             <Label>תוכן</Label>
-            <Textarea value={form.content} onChange={(e) => update('content', e.target.value)} placeholder="כתוב את הפתק שלך..." rows={6} className="mt-1.5 font-mono text-sm" />
+            <Textarea
+              value={form.content}
+              onChange={(event) => update('content', event.target.value)}
+              placeholder="כתוב את הפתק שלך..."
+              rows={6}
+              className="mt-1.5 font-mono text-sm"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>עדיפות</Label>
-              <Select value={form.priority} onValueChange={(v) => update('priority', v as Priority)}>
-                <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+              <Select value={form.priority} onValueChange={(value) => update('priority', value as Priority)}>
+                <SelectTrigger className="mt-1.5">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">נמוך</SelectItem>
                   <SelectItem value="medium">בינוני</SelectItem>
@@ -100,10 +188,16 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             </div>
             <div>
               <Label>קטגוריה</Label>
-              <Select value={form.category} onValueChange={(v) => update('category', v)}>
-                <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+              <Select value={form.category || undefined} onValueChange={(value) => update('category', value)}>
+                <SelectTrigger className="mt-1.5">
+                  <SelectValue placeholder="בחר קטגוריה" />
+                </SelectTrigger>
                 <SelectContent>
-                  {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -112,26 +206,42 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>תאריך יעד</Label>
-              <Input type="date" value={form.dueDate?.slice(0, 10) ?? ''} onChange={(e) => update('dueDate', e.target.value ? new Date(e.target.value).toISOString() : undefined)} className="mt-1.5" />
+              <Input
+                type="date"
+                value={toDateInputValue(form.dueDate)}
+                onChange={(event) =>
+                  update('dueDate', event.target.value ? new Date(event.target.value).toISOString() : undefined)
+                }
+                className="mt-1.5"
+              />
             </div>
             <div>
               <Label>תזכורת</Label>
-              <Input type="datetime-local" value={form.reminderAt?.slice(0, 16) ?? ''} onChange={(e) => update('reminderAt', e.target.value ? new Date(e.target.value).toISOString() : undefined)} className="mt-1.5" />
+              <Input
+                type="datetime-local"
+                value={toDateTimeLocalValue(form.reminderAt)}
+                min={minReminderAt}
+                onChange={(event) => update('reminderAt', fromDateTimeLocalValue(event.target.value))}
+                className="mt-1.5"
+              />
+              <p className="text-xs text-muted-foreground mt-1">בחר שעה עתידית בפורמט 24 שעות.</p>
             </div>
           </div>
+
+          {validationError && <p className="text-sm text-destructive">{validationError}</p>}
 
           <div>
             <Label>תגיות</Label>
             <div className="flex flex-wrap gap-2 mt-1.5">
-              {allTags.map((t) => (
+              {allTags.map((tag) => (
                 <Badge
-                  key={t.id}
-                  variant={form.tags.includes(t.name) ? 'default' : 'outline'}
+                  key={tag.id}
+                  variant={form.tags.includes(tag.name) ? 'default' : 'outline'}
                   className="cursor-pointer"
-                  onClick={() => toggleTag(t.name)}
+                  onClick={() => toggleTag(tag.name)}
                 >
-                  {t.name}
-                  {form.tags.includes(t.name) && <X className="h-3 w-3 mr-1" />}
+                  {tag.name}
+                  {form.tags.includes(tag.name) && <X className="h-3 w-3 mr-1" />}
                 </Badge>
               ))}
             </div>
@@ -139,24 +249,26 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
 
           <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2 text-sm">
-              <Switch checked={form.pinned} onCheckedChange={(v) => update('pinned', v)} />
+              <Switch checked={form.pinned} onCheckedChange={(value) => update('pinned', value)} />
               <Pin className="h-4 w-4" /> נעוץ
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <Switch checked={form.hasAlert} onCheckedChange={(v) => update('hasAlert', v)} />
+              <Switch checked={form.hasAlert} onCheckedChange={(value) => update('hasAlert', value)} />
               <AlertTriangle className="h-4 w-4" /> התראה
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <Switch checked={form.hasEmailAction} onCheckedChange={(v) => update('hasEmailAction', v)} />
+              <Switch checked={form.hasEmailAction} onCheckedChange={(value) => update('hasEmailAction', value)} />
               <Mail className="h-4 w-4" /> פעולת אימייל
             </label>
           </div>
 
           <div className="flex justify-start gap-3 pt-2 border-t">
-            <Button onClick={handleSave}>
+            <Button onClick={() => void handleSave()} disabled={isSaving}>
               {isNew ? 'צור פתק' : 'שמור שינויים'}
             </Button>
-            <Button variant="outline" onClick={onClose}>ביטול</Button>
+            <Button variant="outline" onClick={onClose} disabled={isSaving}>
+              ביטול
+            </Button>
           </div>
         </div>
       </DialogContent>

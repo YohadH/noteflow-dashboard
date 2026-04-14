@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { authApi } from '@/api';
+import { getErrorMessage } from '@/api/errors';
 
 export interface LocalUser {
   id: string;
@@ -11,95 +13,154 @@ export interface LocalUser {
 interface UserStore {
   currentUser: LocalUser | null;
   users: LocalUser[];
-  login: (email: string, password: string) => boolean;
-  signup: (name: string, email: string, password: string) => boolean;
-  logout: () => void;
-  loadUsers: () => void;
+  isInitialized: boolean;
+  isLoading: boolean;
+  error: string | null;
+  initialize: () => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  loadUsers: () => Promise<void>;
 }
 
-const USERS_KEY = 'app_users';
-const PASSWORDS_KEY = 'app_passwords';
-const CURRENT_USER_KEY = 'app_current_user';
+let authSubscription:
+  | {
+      unsubscribe: () => void;
+    }
+  | undefined;
 
-// Seed a default test user
-(function seedTestUser() {
-  const users: LocalUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-  const passwords: Record<string, string> = JSON.parse(localStorage.getItem(PASSWORDS_KEY) || '{}');
-  const existing = users.find(u => u.email === 'test@gmail.com');
-  if (existing) {
-    // Always ensure password is up to date
-    passwords[existing.id] = '1234';
-    localStorage.setItem(PASSWORDS_KEY, JSON.stringify(passwords));
-  } else {
-    const id = crypto.randomUUID();
-    const testUser: LocalUser = { id, name: 'Test User', email: 'test@gmail.com', createdAt: new Date().toISOString() };
-    users.push(testUser);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    passwords[id] = '1234';
-    localStorage.setItem(PASSWORDS_KEY, JSON.stringify(passwords));
-  }
-})();
+export const useUserStore = create<UserStore>((set, get) => ({
+  currentUser: null,
+  users: [],
+  isInitialized: false,
+  isLoading: false,
+  error: null,
 
-function getStoredUsers(): LocalUser[] {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-  } catch { return []; }
-}
+  initialize: async () => {
+    if (get().isLoading) {
+      return;
+    }
 
-function getStoredPasswords(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(PASSWORDS_KEY) || '{}');
-  } catch { return {}; }
-}
+    set({ isLoading: true, error: null });
 
-function getCurrentUserId(): string | null {
-  return localStorage.getItem(CURRENT_USER_KEY);
-}
+    try {
+      const currentUser = await authApi.getCurrentUser();
 
-export const useUserStore = create<UserStore>((set) => ({
-  currentUser: (() => {
-    const id = getCurrentUserId();
-    if (!id) return null;
-    const users = getStoredUsers();
-    return users.find(u => u.id === id) || null;
-  })(),
-  users: getStoredUsers(),
+      set({
+        currentUser,
+        users: currentUser ? [currentUser] : [],
+        isInitialized: true,
+        isLoading: false,
+        error: null,
+      });
 
-  login: (email, password) => {
-    const users = getStoredUsers();
-    const passwords = getStoredPasswords();
-    const user = users.find(u => u.email === email);
-    if (!user || passwords[user.id] !== password) return false;
-    localStorage.setItem(CURRENT_USER_KEY, user.id);
-    set({ currentUser: user });
-    return true;
+      if (!authSubscription) {
+        const subscription = authApi.onAuthStateChange(async () => {
+          try {
+            const nextUser = await authApi.getCurrentUser();
+            set({
+              currentUser: nextUser,
+              users: nextUser ? [nextUser] : [],
+              isInitialized: true,
+              isLoading: false,
+              error: null,
+            });
+          } catch (error) {
+            set({
+              currentUser: null,
+              users: [],
+              isInitialized: true,
+              isLoading: false,
+              error: getErrorMessage(error, 'Failed to refresh your session.'),
+            });
+          }
+        });
+
+        authSubscription = subscription.data.subscription;
+      }
+    } catch (error) {
+      set({
+        currentUser: null,
+        users: [],
+        isInitialized: true,
+        isLoading: false,
+        error: getErrorMessage(error, 'Failed to initialize authentication.'),
+      });
+    }
   },
 
-  signup: (name, email, password) => {
-    const users = getStoredUsers();
-    if (users.find(u => u.email === email)) return false;
-    const newUser: LocalUser = {
-      id: crypto.randomUUID(),
-      name,
-      email,
-      createdAt: new Date().toISOString(),
-    };
-    const updatedUsers = [...users, newUser];
-    const passwords = getStoredPasswords();
-    passwords[newUser.id] = password;
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    localStorage.setItem(PASSWORDS_KEY, JSON.stringify(passwords));
-    localStorage.setItem(CURRENT_USER_KEY, newUser.id);
-    set({ currentUser: newUser, users: updatedUsers });
-    return true;
+  login: async (email, password) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const currentUser = await authApi.signIn(email, password);
+      set({
+        currentUser,
+        users: currentUser ? [currentUser] : [],
+        isInitialized: true,
+        isLoading: false,
+        error: null,
+      });
+      return Boolean(currentUser);
+    } catch (error) {
+      set({
+        currentUser: null,
+        users: [],
+        isInitialized: true,
+        isLoading: false,
+        error: getErrorMessage(error, 'Failed to sign in.'),
+      });
+      return false;
+    }
   },
 
-  logout: () => {
-    localStorage.removeItem(CURRENT_USER_KEY);
-    set({ currentUser: null });
+  signup: async (name, email, password) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const currentUser = await authApi.signUp(name, email, password);
+      set({
+        currentUser,
+        users: currentUser ? [currentUser] : [],
+        isInitialized: true,
+        isLoading: false,
+        error: null,
+      });
+      return Boolean(currentUser);
+    } catch (error) {
+      set({
+        currentUser: null,
+        users: [],
+        isInitialized: true,
+        isLoading: false,
+        error: getErrorMessage(error, 'Failed to create your account.'),
+      });
+      return false;
+    }
   },
 
-  loadUsers: () => {
-    set({ users: getStoredUsers() });
+  logout: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      await authApi.signOut();
+      set({
+        currentUser: null,
+        users: [],
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: getErrorMessage(error, 'Failed to sign out.'),
+      });
+      throw error;
+    }
+  },
+
+  loadUsers: async () => {
+    const currentUser = get().currentUser;
+    set({ users: currentUser ? [currentUser] : [] });
   },
 }));

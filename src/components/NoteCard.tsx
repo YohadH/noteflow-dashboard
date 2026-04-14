@@ -1,4 +1,4 @@
-import { Note } from '@/types';
+import type { Note } from '@/types';
 import { PriorityBadge } from './PriorityBadge';
 import { StatusBadge } from './StatusBadge';
 import { statusConfig, formatDate } from '@/lib/noteUtils';
@@ -30,19 +30,15 @@ export function NoteCard({ note, view = 'grid', onEdit, onDelete, onArchive }: N
         'hover:shadow-md hover:border-primary/20',
         'animate-slide-in',
         isGrid ? 'flex flex-col gap-3' : 'flex items-center gap-4',
-        note.pinned && 'ring-1 ring-primary/20'
+        note.pinned && 'ring-1 ring-primary/20',
       )}
     >
-      {note.pinned && (
-        <Pin className="absolute top-3 left-3 h-3.5 w-3.5 text-primary opacity-60" />
-      )}
+      {note.pinned && <Pin className="absolute top-3 left-3 h-3.5 w-3.5 text-primary opacity-60" />}
 
       <div className={cn('flex-1 min-w-0', isGrid ? '' : 'flex items-center gap-4')}>
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-sm truncate pl-6">{note.title}</h3>
-          {isGrid && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{note.content}</p>
-          )}
+          {isGrid && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{note.content}</p>}
         </div>
 
         <div className={cn('flex items-center gap-2 flex-wrap', isGrid ? 'mt-auto pt-2' : '')}>
@@ -68,21 +64,25 @@ export function NoteCard({ note, view = 'grid', onEdit, onDelete, onArchive }: N
 
         <DropdownMenu>
           <DropdownMenuTrigger
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
             className="ms-auto opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit?.(note); }}>עריכה</DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(note.id); }}>
-              <Archive className="h-4 w-4 ml-2" />העבר לארכיון
+            <DropdownMenuItem onClick={(event) => { event.stopPropagation(); onEdit?.(note); }}>
+              עריכה
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(event) => { event.stopPropagation(); onArchive?.(note.id); }}>
+              <Archive className="h-4 w-4 ml-2" />
+              העבר לארכיון
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
-              onClick={(e) => { e.stopPropagation(); onDelete?.(note.id); }}
+              onClick={(event) => { event.stopPropagation(); onDelete?.(note.id); }}
             >
-              <Trash2 className="h-4 w-4 ml-2" />מחק
+              <Trash2 className="h-4 w-4 ml-2" />
+              הסר כרטיס
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

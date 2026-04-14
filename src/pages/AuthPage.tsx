@@ -12,36 +12,64 @@ export default function AuthPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, signup } = useUserStore();
+  const { login, signup, isLoading } = useUserStore();
   const { loadUserData } = useNoteStore();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
     if (isLogin) {
-      const success = login(email, password);
-      if (success) {
-        const user = useUserStore.getState().currentUser!;
-        loadUserData(user.id);
-        navigate('/');
-      } else {
+      const success = await login(email, password);
+
+      if (!success) {
         toast({ title: 'שגיאה', description: 'אימייל או סיסמה שגויים', variant: 'destructive' });
-      }
-    } else {
-      if (!name.trim()) {
-        toast({ title: 'שגיאה', description: 'נא להזין שם', variant: 'destructive' });
         return;
       }
-      const success = signup(name, email, password);
-      if (success) {
-        const user = useUserStore.getState().currentUser!;
-        loadUserData(user.id);
-        navigate('/');
-      } else {
-        toast({ title: 'שגיאה', description: 'האימייל כבר קיים במערכת', variant: 'destructive' });
+
+      const user = useUserStore.getState().currentUser;
+      if (!user) {
+        toast({
+          title: 'אימות נוסף נדרש',
+          description: 'בדוק את הגדרות האימות ב-Supabase אם הופעלה דרישת אישור אימייל.',
+          variant: 'destructive',
+        });
+        return;
       }
+
+      await loadUserData(user.id);
+      navigate('/');
+      return;
     }
+
+    if (!name.trim()) {
+      toast({ title: 'שגיאה', description: 'נא להזין שם', variant: 'destructive' });
+      return;
+    }
+
+    const success = await signup(name, email, password);
+
+    if (!success) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו ליצור את החשבון. בדוק אם האימייל כבר קיים או אם Supabase דורש אישור אימייל.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const user = useUserStore.getState().currentUser;
+    if (!user) {
+      toast({
+        title: 'אימות נוסף נדרש',
+        description: 'החשבון נוצר, אבל נדרש אישור אימייל לפני כניסה.',
+      });
+      return;
+    }
+
+    await loadUserData(user.id);
+    navigate('/');
   };
 
   return (
@@ -54,18 +82,16 @@ export default function AuthPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-foreground">NoteFlow</h1>
-          <p className="text-muted-foreground">
-            {isLogin ? 'התחבר לחשבונך' : 'צור חשבון חדש'}
-          </p>
+          <p className="text-muted-foreground">{isLogin ? 'התחבר לחשבונך' : 'צור חשבון חדש'}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 bg-card p-6 rounded-xl border border-border shadow-sm">
+        <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4 bg-card p-6 rounded-xl border border-border shadow-sm">
           {!isLogin && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">שם מלא</label>
               <Input
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(event) => setName(event.target.value)}
                 placeholder="ישראל ישראלי"
                 required={!isLogin}
               />
@@ -76,7 +102,7 @@ export default function AuthPage() {
             <Input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="example@email.com"
               required
               dir="ltr"
@@ -87,14 +113,14 @@ export default function AuthPage() {
             <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
               required
               minLength={4}
               dir="ltr"
             />
           </div>
-          <Button type="submit" className="w-full gap-2">
+          <Button type="submit" className="w-full gap-2" disabled={isLoading}>
             {isLogin ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
             {isLogin ? 'התחבר' : 'הרשם'}
           </Button>

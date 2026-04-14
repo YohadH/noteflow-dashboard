@@ -3,6 +3,8 @@ export type NoteStatus = 'active' | 'completed' | 'archived';
 export type AlertStatus = 'active' | 'scheduled' | 'sent' | 'failed';
 export type AlertChannel = 'email' | 'in-app' | 'webhook';
 export type EmailActionStatus = 'draft' | 'pending' | 'sent' | 'failed';
+export type BoardRole = 'owner' | 'member';
+export type BoardInvitationStatus = 'pending' | 'accepted' | 'revoked';
 
 export interface Note {
   id: string;
@@ -64,4 +66,47 @@ export interface Category {
   id: string;
   name: string;
   icon?: string;
+  color?: string;
+}
+
+export interface Board {
+  id: string;
+  name: string;
+  ownerUserId: string;
+  isPersonal: boolean;
+  role: BoardRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BoardMember {
+  boardId: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: BoardRole;
+  joinedAt: string;
+  isCurrentUser: boolean;
+}
+
+export interface BoardInvitation {
+  id: string;
+  boardId: string;
+  email: string;
+  status: BoardInvitationStatus;
+  invitedBy: string;
+  createdAt: string;
+}
+
+export interface UserSettings {
+  emailAlertsEnabled: boolean;
+  inAppAlertsEnabled: boolean;
+  pushRemindersEnabled: boolean;
+  defaultReminderTime: string;
+  defaultSnoozeInterval: string;
+  activeBoardId?: string;
+  apiEndpoint?: string;
+  webhookUrl?: string;
+  n8nConnected: boolean;
+  emailProvider?: string;
 }

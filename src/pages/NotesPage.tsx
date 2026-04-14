@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useNoteStore } from '@/stores/noteStore';
-import { Note, Priority, NoteStatus } from '@/types';
+import type { Note, Priority } from '@/types';
 import { NoteCard } from '@/components/NoteCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LayoutGrid, List, Search, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 
@@ -24,7 +30,7 @@ type SortBy = 'newest' | 'oldest' | 'priority' | 'dueDate';
 const priorityOrder: Record<Priority, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 
 export default function NotesPage() {
-  const { notes, deleteNote, updateNote } = useNoteStore();
+  const { notes, deleteNote, updateNote, searchQuery } = useNoteStore();
   const { onEditNote, onNewNote } = useOutletContext<LayoutContext>();
   const { toast } = useToast();
 
@@ -35,37 +41,61 @@ export default function NotesPage() {
   const [sortBy, setSortBy] = useState<SortBy>('newest');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  const effectiveSearch = search || searchQuery;
+
   const filtered = useMemo(() => {
-    let result = notes.filter((n) => {
-      if (search && !n.title.toLowerCase().includes(search.toLowerCase()) && !n.content.toLowerCase().includes(search.toLowerCase())) return false;
-      if (priorityFilter !== 'all' && n.priority !== priorityFilter) return false;
-      if (statusFilter !== 'all' && n.status !== statusFilter) return false;
+    const normalizedSearch = effectiveSearch.trim().toLowerCase();
+    const result = notes.filter((note) => {
+      if (
+        normalizedSearch &&
+        !note.title.toLowerCase().includes(normalizedSearch) &&
+        !note.content.toLowerCase().includes(normalizedSearch)
+      ) {
+        return false;
+      }
+
+      if (priorityFilter !== 'all' && note.priority !== priorityFilter) {
+        return false;
+      }
+
+      if (statusFilter !== 'all' && note.status !== statusFilter) {
+        return false;
+      }
+
       return true;
     });
-    result.sort((a, b) => {
+
+    result.sort((first, second) => {
       switch (sortBy) {
-        case 'oldest': return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case 'priority': return priorityOrder[a.priority] - priorityOrder[b.priority];
-        case 'dueDate': return (a.dueDate || '9').localeCompare(b.dueDate || '9');
-        default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'oldest':
+          return new Date(first.createdAt).getTime() - new Date(second.createdAt).getTime();
+        case 'priority':
+          return priorityOrder[first.priority] - priorityOrder[second.priority];
+        case 'dueDate':
+          return (first.dueDate || '9').localeCompare(second.dueDate || '9');
+        default:
+          return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
       }
     });
+
     return result;
-  }, [notes, search, priorityFilter, statusFilter, sortBy]);
+  }, [effectiveSearch, notes, priorityFilter, sortBy, statusFilter]);
 
-  const pinnedNotes = filtered.filter((n) => n.pinned);
-  const unpinnedNotes = filtered.filter((n) => !n.pinned);
+  const pinnedNotes = filtered.filter((note) => note.pinned);
+  const unpinnedNotes = filtered.filter((note) => !note.pinned);
 
-  const handleDelete = () => {
-    if (deleteId) {
-      deleteNote(deleteId);
-      toast({ title: 'הפתק נמחק', variant: 'destructive' });
-      setDeleteId(null);
+  const handleDelete = async () => {
+    if (!deleteId) {
+      return;
     }
+
+    await deleteNote(deleteId);
+    toast({ title: 'הפתק נמחק', variant: 'destructive' });
+    setDeleteId(null);
   };
 
-  const handleArchive = (id: string) => {
-    updateNote(id, { status: 'archived' });
+  const handleArchive = async (id: string) => {
+    await updateNote(id, { status: 'archived' });
     toast({ title: 'הפתק הועבר לארכיון' });
   };
 
@@ -82,14 +112,20 @@ export default function NotesPage() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="סנן פתקים..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9 h-9" />
+          <Input
+            placeholder="סנן פתקים..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="pr-9 h-9"
+          />
         </div>
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-32 h-9"><SelectValue placeholder="עדיפות" /></SelectTrigger>
+          <SelectTrigger className="w-32 h-9">
+            <SelectValue placeholder="עדיפות" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">כל העדיפויות</SelectItem>
             <SelectItem value="urgent">דחוף</SelectItem>
@@ -99,7 +135,9 @@ export default function NotesPage() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-32 h-9"><SelectValue placeholder="סטטוס" /></SelectTrigger>
+          <SelectTrigger className="w-32 h-9">
+            <SelectValue placeholder="סטטוס" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">כל הסטטוסים</SelectItem>
             <SelectItem value="active">פעיל</SelectItem>
@@ -107,8 +145,10 @@ export default function NotesPage() {
             <SelectItem value="archived">בארכיון</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
-          <SelectTrigger className="w-32 h-9"><SelectValue /></SelectTrigger>
+        <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortBy)}>
+          <SelectTrigger className="w-32 h-9">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="newest">חדש ביותר</SelectItem>
             <SelectItem value="oldest">ישן ביותר</SelectItem>
@@ -117,38 +157,58 @@ export default function NotesPage() {
           </SelectContent>
         </Select>
         <div className="flex border rounded-md">
-          <button onClick={() => setView('grid')} className={cn('p-2 rounded-r-md', view === 'grid' ? 'bg-muted' : 'hover:bg-muted/50')}>
+          <button
+            onClick={() => setView('grid')}
+            className={cn('p-2 rounded-r-md', view === 'grid' ? 'bg-muted' : 'hover:bg-muted/50')}
+          >
             <LayoutGrid className="h-4 w-4" />
           </button>
-          <button onClick={() => setView('list')} className={cn('p-2 rounded-l-md', view === 'list' ? 'bg-muted' : 'hover:bg-muted/50')}>
+          <button
+            onClick={() => setView('list')}
+            className={cn('p-2 rounded-l-md', view === 'list' ? 'bg-muted' : 'hover:bg-muted/50')}
+          >
             <List className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      {/* Pinned */}
       {pinnedNotes.length > 0 && (
         <div>
           <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">נעוצים</h2>
           <div className={cn(view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3' : 'space-y-2')}>
-            {pinnedNotes.map((n) => (
-              <NoteCard key={n.id} note={n} view={view} onEdit={onEditNote} onDelete={setDeleteId} onArchive={handleArchive} />
+            {pinnedNotes.map((note) => (
+              <NoteCard
+                key={note.id}
+                note={note}
+                view={view}
+                onEdit={onEditNote}
+                onDelete={setDeleteId}
+                onArchive={(id) => void handleArchive(id)}
+              />
             ))}
           </div>
         </div>
       )}
 
-      {/* All notes */}
       {unpinnedNotes.length > 0 ? (
         <div className={cn(view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3' : 'space-y-2')}>
-          {unpinnedNotes.map((n) => (
-            <NoteCard key={n.id} note={n} view={view} onEdit={onEditNote} onDelete={setDeleteId} onArchive={handleArchive} />
+          {unpinnedNotes.map((note) => (
+            <NoteCard
+              key={note.id}
+              note={note}
+              view={view}
+              onEdit={onEditNote}
+              onDelete={setDeleteId}
+              onArchive={(id) => void handleArchive(id)}
+            />
           ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground">אין פתקים התואמים את הסינון</p>
-          <Button variant="outline" className="mt-4" onClick={() => onNewNote()}>צור פתק</Button>
+          <Button variant="outline" className="mt-4" onClick={() => onNewNote()}>
+            צור פתק
+          </Button>
         </div>
       ) : null}
 
@@ -159,7 +219,12 @@ export default function NotesPage() {
             <AlertDialogDescription>פעולה זו אינה ניתנת לביטול.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">מחק</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => void handleDelete()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              מחק
+            </AlertDialogAction>
             <AlertDialogCancel>ביטול</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>

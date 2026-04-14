@@ -1,6 +1,21 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Plus, Bell, User, Menu, X, Zap, LayoutDashboard, StickyNote, AlertTriangle, Mail, Flag, Settings, LogOut } from 'lucide-react';
+import {
+  Search,
+  Plus,
+  Bell,
+  User,
+  Menu,
+  X,
+  Zap,
+  LayoutDashboard,
+  StickyNote,
+  AlertTriangle,
+  Mail,
+  Flag,
+  Settings,
+  LogOut,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNoteStore } from '@/stores/noteStore';
@@ -29,17 +44,28 @@ interface TopBarProps {
 }
 
 export function TopBar({ onNewNote }: TopBarProps) {
-  const { searchQuery, setSearchQuery } = useNoteStore();
+  const { searchQuery, setSearchQuery, alerts, clearUserData } = useNoteStore();
   const { currentUser, logout } = useUserStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth');
-    toast({ title: 'התנתקת', description: 'התנתקת בהצלחה.' });
+  const pendingAlerts = alerts.filter((alert) => alert.status === 'active' || alert.status === 'scheduled').length;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      clearUserData();
+      navigate('/auth');
+      toast({ title: 'התנתקת', description: 'ההתנתקות בוצעה בהצלחה.' });
+    } catch {
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו להתנתק כרגע.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -55,7 +81,7 @@ export function TopBar({ onNewNote }: TopBarProps) {
             <Input
               placeholder="חיפוש פתקים..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               className="pr-9 bg-secondary/50 border-0 h-9"
             />
           </div>
@@ -68,7 +94,7 @@ export function TopBar({ onNewNote }: TopBarProps) {
 
         <button className="relative p-2 rounded-md hover:bg-muted" onClick={() => navigate('/alerts')}>
           <Bell className="h-4.5 w-4.5 text-muted-foreground" />
-          <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-priority-urgent rounded-full" />
+          {pendingAlerts > 0 && <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-priority-urgent rounded-full" />}
         </button>
 
         <DropdownMenu>
@@ -82,7 +108,7 @@ export function TopBar({ onNewNote }: TopBarProps) {
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={() => navigate('/settings')}>הגדרות</DropdownMenuItem>
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+            <DropdownMenuItem onClick={() => void handleLogout()} className="text-destructive">
               <LogOut className="h-4 w-4 ml-2" />
               התנתק
             </DropdownMenuItem>
@@ -90,7 +116,6 @@ export function TopBar({ onNewNote }: TopBarProps) {
         </DropdownMenu>
       </header>
 
-      {/* Mobile nav drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-foreground/30" onClick={() => setMobileMenuOpen(false)} />
@@ -116,7 +141,7 @@ export function TopBar({ onNewNote }: TopBarProps) {
                     'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors',
                     location.pathname === item.path
                       ? 'bg-sidebar-accent text-sidebar-primary font-medium'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   )}
                 >
                   <item.icon className="h-4.5 w-4.5" />

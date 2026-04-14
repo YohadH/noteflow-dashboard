@@ -1,31 +1,46 @@
-import { useState, useEffect } from 'react';
-import { Outlet, useNavigate, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { NoteEditor } from './NoteEditor';
 import { useNoteStore } from '@/stores/noteStore';
 import { useUserStore } from '@/stores/userStore';
-import { Note } from '@/types';
+import type { Note } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export function AppLayout() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [editorDefaults, setEditorDefaults] = useState<Partial<Note>>({});
-  const { addNote, updateNote, saveUserData, notes, reminders, alerts, emailActions } = useNoteStore();
-  const currentUser = useUserStore((s) => s.currentUser);
+  const { addNote, updateNote, loadUserData, isLoading, isHydrated } = useNoteStore();
+  const currentUser = useUserStore((state) => state.currentUser);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Auto-save data when it changes
   useEffect(() => {
-    if (currentUser) {
-      saveUserData(currentUser.id);
+    if (!currentUser) {
+      return;
     }
-  }, [currentUser, notes, reminders, alerts, emailActions, saveUserData]);
+
+    loadUserData(currentUser.id).catch(() => {
+      toast({
+        title: 'שגיאה',
+        description: 'טעינת הנתונים מהבקאנד נכשלה.',
+        variant: 'destructive',
+      });
+    });
+  }, [currentUser, loadUserData, toast]);
 
   if (!currentUser) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (isLoading && !isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-sm text-muted-foreground">
+        Loading your notes...
+      </div>
+    );
   }
 
   const handleNewNote = (defaults?: Partial<Note>) => {
@@ -40,13 +55,23 @@ export function AppLayout() {
     setEditorOpen(true);
   };
 
-  const handleSaveNote = (note: Note) => {
-    if (editingNote) {
-      updateNote(note.id, note);
-      toast({ title: 'הפתק עודכן', description: `"${note.title}" נשמר בהצלחה.` });
-    } else {
-      addNote(note);
+  const handleSaveNote = async (note: Note) => {
+    try {
+      if (editingNote) {
+        await updateNote(note.id, note);
+        toast({ title: 'הפתק עודכן', description: `"${note.title}" נשמר בהצלחה.` });
+        return;
+      }
+
+      await addNote(note);
       toast({ title: 'פתק נוצר', description: `"${note.title}" נוסף בהצלחה.` });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: 'שמירת הפתק נכשלה.',
+        variant: 'destructive',
+      });
+      throw error;
     }
   };
 
@@ -59,7 +84,13 @@ export function AppLayout() {
           <Outlet context={{ onEditNote: handleEditNote, onNewNote: handleNewNote, navigate }} />
         </main>
       </div>
-      <NoteEditor note={editingNote} open={editorOpen} onClose={() => setEditorOpen(false)} onSave={handleSaveNote} defaults={editorDefaults} />
+      <NoteEditor
+        note={editingNote}
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        onSave={handleSaveNote}
+        defaults={editorDefaults}
+      />
     </div>
   );
 }
