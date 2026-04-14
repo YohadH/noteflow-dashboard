@@ -1,7 +1,7 @@
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 export type NoteStatus = 'active' | 'completed' | 'archived';
 export type AlertStatus = 'active' | 'scheduled' | 'sent' | 'failed';
-export type AlertChannel = 'email' | 'in-app' | 'webhook';
+export type AlertChannel = 'email' | 'in-app' | 'webhook' | 'push';
 export type EmailActionStatus = 'draft' | 'pending' | 'sent' | 'failed';
 export type BoardRole = 'owner' | 'member';
 export type BoardInvitationStatus = 'pending' | 'accepted' | 'revoked';

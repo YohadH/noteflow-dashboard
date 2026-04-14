@@ -8,3 +8,4 @@ export { emailActionsApi } from './emailActionsApi';
 export { categoriesApi } from './categoriesApi';
 export { tagsApi } from './tagsApi';
 export { settingsApi } from './settingsApi';
+export { pushSubscriptionsApi } from './pushSubscriptionsApi';

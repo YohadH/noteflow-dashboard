@@ -5,10 +5,29 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Tag, Plug, CheckCircle2, XCircle, Users, UserPlus, Trash2, House } from 'lucide-react';
+import { Bell, Tag, Plug, CheckCircle2, XCircle, Users, UserPlus, Trash2, House, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNoteStore } from '@/stores/noteStore';
+import { pushSubscriptionsApi } from '@/api';
+import { getErrorMessage } from '@/api/errors';
+import {
+  getExistingPushSubscription,
+  getPushSupportState,
+  subscribeCurrentDeviceToPush,
+  unsubscribeCurrentDeviceFromPush,
+} from '@/lib/push';
 import type { UserSettings } from '@/types';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -30,27 +49,105 @@ export default function SettingsPage() {
 
   const [form, setForm] = useState<UserSettings>(settings);
   const [connectEmail, setConnectEmail] = useState('');
-  const activeBoard = boards.find((board) => board.id === form.activeBoardId);
-  const canEditBoardWebhook = activeBoard?.role === 'owner';
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('unsupported');
+  const [pushSupported, setPushSupported] = useState(false);
+  const [hasPushPublicKey, setHasPushPublicKey] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isCurrentDeviceSubscribed, setIsCurrentDeviceSubscribed] = useState(false);
+  const [isPushBusy, setIsPushBusy] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const currentBoard = boards.find((board) => board.id === settings.activeBoardId);
+  const selectedBoard = boards.find((board) => board.id === form.activeBoardId) || currentBoard;
+  const canEditBoardWebhook = selectedBoard?.role === 'owner';
+  const canManageCurrentBoard = currentBoard?.role === 'owner';
+  const hasPendingBoardChange = Boolean(form.activeBoardId && form.activeBoardId !== settings.activeBoardId);
 
   useEffect(() => {
     setForm(settings);
   }, [settings]);
 
+  const refreshPushState = async () => {
+    const support = getPushSupportState();
+    setPushSupported(support.supported);
+    setHasPushPublicKey(support.hasPublicKey);
+    setPushPermission(support.permission);
+    setIsStandalone(support.standalone);
+
+    if (!support.supported || !support.hasPublicKey) {
+      setIsCurrentDeviceSubscribed(false);
+      return;
+    }
+
+    try {
+      const subscription = await getExistingPushSubscription();
+      setIsCurrentDeviceSubscribed(Boolean(subscription));
+    } catch {
+      setIsCurrentDeviceSubscribed(false);
+    }
+  };
+
+  useEffect(() => {
+    void refreshPushState();
+  }, [settings.activeBoardId]);
+
   const handleBoardSelectionChange = (boardId: string) => {
-    const selectedBoard = boards.find((board) => board.id === boardId);
+    const board = boards.find((item) => item.id === boardId);
 
     setForm((current) => ({
       ...current,
       activeBoardId: boardId,
-      webhookUrl: selectedBoard?.webhookUrl || '',
-      n8nConnected: selectedBoard?.n8nConnected ?? false,
+      webhookUrl: board?.webhookUrl || '',
+      n8nConnected: board?.n8nConnected ?? false,
     }));
   };
 
   const handleSave = async () => {
-    await updateSettings(form);
-    toast({ title: 'ההגדרות נשמרו', description: 'ההעדפות עודכנו בהצלחה.' });
+    const apiEndpoint = form.apiEndpoint?.trim() || '';
+    const webhookUrl = form.webhookUrl?.trim() || '';
+    const emailProvider = form.emailProvider?.trim() || '';
+
+    if (apiEndpoint && !isValidHttpUrl(apiEndpoint)) {
+      toast({
+        title: 'שגיאה',
+        description: 'כתובת ה-API חייבת להיות URL מלא שמתחיל ב-http או ב-https.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (canEditBoardWebhook && webhookUrl && !isValidHttpUrl(webhookUrl)) {
+      toast({
+        title: 'שגיאה',
+        description: 'כתובת ה-webhook חייבת להיות URL מלא שמתחיל ב-http או ב-https.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      await updateSettings({
+        ...form,
+        apiEndpoint,
+        webhookUrl,
+        emailProvider,
+      });
+
+      toast({
+        title: 'ההגדרות נשמרו',
+        description: 'ההעדפות וההגדרות עודכנו בהצלחה.',
+      });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו לשמור את ההגדרות. בדוק את החיבור והרשאות הלוח ונסה שוב.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddCategory = async () => {
@@ -59,8 +156,19 @@ export default function SettingsPage() {
       return;
     }
 
-    await addCategory(name.trim());
-    toast({ title: 'קטגוריה נוספה', description: `"${name.trim()}" נוספה בהצלחה.` });
+    try {
+      await addCategory(name.trim());
+      toast({
+        title: 'קטגוריה נוספה',
+        description: `"${name.trim()}" נוספה בהצלחה.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו להוסיף קטגוריה ללוח הפעיל.'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleAddTag = async () => {
@@ -69,36 +177,154 @@ export default function SettingsPage() {
       return;
     }
 
-    await addTag(name.trim());
-    toast({ title: 'תגית נוספה', description: `"${name.trim()}" נוספה בהצלחה.` });
+    try {
+      await addTag(name.trim());
+      toast({
+        title: 'תגית נוספה',
+        description: `"${name.trim()}" נוספה בהצלחה.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו להוסיף תגית ללוח הפעיל.'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleConnectUser = async () => {
-    if (!connectEmail.trim()) {
+    const normalizedEmail = connectEmail.trim().toLowerCase();
+    if (!normalizedEmail) {
       return;
     }
 
-    await connectBoardUser(connectEmail.trim());
-    setConnectEmail('');
-    toast({
-      title: 'החיבור נשמר',
-      description: 'אם המשתמש קיים הוא חובר מיד. אחרת נשמרה הזמנה ממתינה.',
-    });
+    if (!EMAIL_PATTERN.test(normalizedEmail)) {
+      toast({
+        title: 'שגיאה',
+        description: 'הכנס כתובת אימייל תקינה כדי לחבר משתמש נוסף ללוח.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await connectBoardUser(normalizedEmail);
+      setConnectEmail('');
+      toast({
+        title: 'החיבור נשמר',
+        description: 'אם המשתמש כבר קיים הוא יחובר מיד. אחרת תישמר הזמנה ממתינה.',
+      });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו לחבר את המשתמש ללוח הזה.'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleRemoveMember = async (userId: string) => {
-    await removeBoardUser(userId);
-    toast({ title: 'המשתמש הוסר מהלוח' });
+    try {
+      await removeBoardUser(userId);
+      toast({ title: 'המשתמש הוסר מהלוח' });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו להסיר את המשתמש מהלוח.'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleRevokeInvitation = async (invitationId: string) => {
-    await revokeBoardInvitation(invitationId);
-    toast({ title: 'ההזמנה בוטלה' });
+    try {
+      await revokeBoardInvitation(invitationId);
+      toast({ title: 'ההזמנה בוטלה' });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו לבטל את ההזמנה.'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleBoardChange = async (boardId: string) => {
-    await switchBoard(boardId);
-    toast({ title: 'הלוח הפעיל הוחלף' });
+    try {
+      await switchBoard(boardId);
+      toast({ title: 'הלוח הפעיל הוחלף' });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו להחליף את הלוח הפעיל.'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEnablePush = async () => {
+    setIsPushBusy(true);
+
+    try {
+      const subscription = await subscribeCurrentDeviceToPush();
+      await pushSubscriptionsApi.save(subscription);
+
+      const nextSettings = {
+        ...form,
+        pushRemindersEnabled: true,
+      };
+
+      setForm(nextSettings);
+      await updateSettings(nextSettings);
+
+      toast({
+        title: 'התראות Push הופעלו',
+        description: 'המכשיר הזה יקבל התראות כאשר פתק עם תזכורת יגיע לזמן שנקבע.',
+      });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו להפעיל התראות Push במכשיר הזה.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPushBusy(false);
+      await refreshPushState();
+    }
+  };
+
+  const handleDisablePush = async () => {
+    setIsPushBusy(true);
+
+    try {
+      const endpoint = await unsubscribeCurrentDeviceFromPush();
+
+      if (endpoint) {
+        await pushSubscriptionsApi.remove(endpoint);
+      }
+
+      const nextSettings = {
+        ...form,
+        pushRemindersEnabled: false,
+      };
+
+      setForm(nextSettings);
+      await updateSettings(nextSettings);
+
+      toast({
+        title: 'התראות Push בוטלו',
+        description: 'המכשיר הזה לא יקבל יותר התראות Push.',
+      });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: getErrorMessage(error, 'לא הצלחנו לבטל את התראות ה-Push במכשיר הזה.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPushBusy(false);
+      await refreshPushState();
+    }
   };
 
   return (
@@ -131,14 +357,20 @@ export default function SettingsPage() {
           <Button
             variant="outline"
             onClick={() => form.activeBoardId && void handleBoardChange(form.activeBoardId)}
-            disabled={!form.activeBoardId || form.activeBoardId === settings.activeBoardId}
+            disabled={!form.activeBoardId || form.activeBoardId === settings.activeBoardId || isSaving}
           >
             החלף לוח
           </Button>
         </div>
-        {activeBoard && (
+        {selectedBoard && (
           <p className="text-sm text-muted-foreground">
-            {activeBoard.isPersonal ? 'לוח אישי' : 'לוח משותף'} · הרשאה: {activeBoard.role === 'owner' ? 'בעלים' : 'חבר'}
+            {selectedBoard.isPersonal ? 'לוח אישי' : 'לוח משותף'} · הרשאה: {selectedBoard.role === 'owner' ? 'בעלים' : 'חבר'}
+          </p>
+        )}
+        {hasPendingBoardChange && currentBoard && selectedBoard && (
+          <p className="text-xs text-muted-foreground">
+            הנתונים שמופיעים למטה עדיין שייכים ל-"{currentBoard.name}". שמור הגדרות או לחץ "החלף לוח" כדי לעבוד עם
+            "{selectedBoard.name}".
           </p>
         )}
       </section>
@@ -153,14 +385,27 @@ export default function SettingsPage() {
             placeholder="family@example.com"
             value={connectEmail}
             onChange={(event) => setConnectEmail(event.target.value)}
+            disabled={!canManageCurrentBoard || hasPendingBoardChange || isSaving}
           />
-          <Button onClick={() => void handleConnectUser()} className="gap-2">
+          <Button
+            onClick={() => void handleConnectUser()}
+            className="gap-2"
+            disabled={!canManageCurrentBoard || hasPendingBoardChange || isSaving}
+          >
             <UserPlus className="h-4 w-4" />
             חבר משתמש
           </Button>
         </div>
+        {!canManageCurrentBoard && currentBoard && (
+          <p className="text-xs text-muted-foreground">רק בעל הלוח הפעיל יכול לחבר או להסיר משתמשים מהלוח.</p>
+        )}
+        {hasPendingBoardChange && currentBoard && selectedBoard && (
+          <p className="text-xs text-muted-foreground">
+            כדי לנהל משתמשים של "{selectedBoard.name}" צריך קודם להחליף ללוח הזה.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
-          שני אימיילים שונים יכולים לעבוד על אותו לוח ואותם פתקים. אם המשתמש עדיין לא קיים, נשמרת הזמנה.
+          שני אימיילים שונים יכולים לעבוד על אותו לוח ואותם פתקים. אם המשתמש עדיין לא קיים, תישמר הזמנה ממתינה.
         </p>
 
         <div className="space-y-3">
@@ -175,8 +420,13 @@ export default function SettingsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{member.role === 'owner' ? 'בעלים' : 'חבר'}</Badge>
-                {!member.isCurrentUser && activeBoard?.role === 'owner' && (
-                  <Button variant="ghost" size="sm" onClick={() => void handleRemoveMember(member.userId)}>
+                {!member.isCurrentUser && canManageCurrentBoard && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void handleRemoveMember(member.userId)}
+                    disabled={hasPendingBoardChange || isSaving}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -195,8 +445,13 @@ export default function SettingsPage() {
                   <p className="text-sm font-medium">{invite.email}</p>
                   <p className="text-xs text-muted-foreground">ממתין להרשמה או להתחברות ללוח</p>
                 </div>
-                {activeBoard?.role === 'owner' && (
-                  <Button variant="ghost" size="sm" onClick={() => void handleRevokeInvitation(invite.id)}>
+                {canManageCurrentBoard && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void handleRevokeInvitation(invite.id)}
+                    disabled={hasPendingBoardChange || isSaving}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -232,6 +487,38 @@ export default function SettingsPage() {
               onCheckedChange={(value) => setForm((current) => ({ ...current, pushRemindersEnabled: value }))}
             />
           </label>
+        </div>
+        <div className="border-t pt-4 space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium flex items-center gap-2">
+                <Smartphone className="h-4 w-4" />
+                התראות לטלפון / לדפדפן הזה
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                צריך לאשר הרשאת התראות במכשיר. באייפון מומלץ להוסיף את האתר למסך הבית לפני ההפעלה.
+              </p>
+            </div>
+            {isCurrentDeviceSubscribed ? (
+              <Button variant="outline" onClick={() => void handleDisablePush()} disabled={isPushBusy || isSaving}>
+                נתק מהמכשיר הזה
+              </Button>
+            ) : (
+              <Button
+                onClick={() => void handleEnablePush()}
+                disabled={isPushBusy || isSaving || !pushSupported || !hasPushPublicKey}
+              >
+                הפעל במכשיר הזה
+              </Button>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>תמיכה בדפדפן: {pushSupported ? 'כן' : 'לא'}</p>
+            <p>מפתח Push ציבורי: {hasPushPublicKey ? 'מוגדר' : 'חסר'}</p>
+            <p>הרשאת התראות: {pushPermission}</p>
+            <p>סטטוס מכשיר נוכחי: {isCurrentDeviceSubscribed ? 'רשום להתראות' : 'לא רשום'}</p>
+            <p>מצב אפליקציה מותקנת: {isStandalone ? 'מותקנת / standalone' : 'דפדפן רגיל'}</p>
+          </div>
         </div>
       </section>
 
@@ -291,7 +578,13 @@ export default function SettingsPage() {
                 {category.name}
               </Badge>
             ))}
-            <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => void handleAddCategory()}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-xs"
+              onClick={() => void handleAddCategory()}
+              disabled={hasPendingBoardChange || isSaving}
+            >
               + הוסף
             </Button>
           </div>
@@ -304,11 +597,20 @@ export default function SettingsPage() {
                 {tag.name}
               </Badge>
             ))}
-            <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => void handleAddTag()}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-xs"
+              onClick={() => void handleAddTag()}
+              disabled={hasPendingBoardChange || isSaving}
+            >
               + הוסף
             </Button>
           </div>
         </div>
+        {hasPendingBoardChange && (
+          <p className="text-xs text-muted-foreground">כדי לערוך קטגוריות ותגיות של לוח אחר צריך קודם להחליף ללוח הזה.</p>
+        )}
       </section>
 
       <section className="bg-card rounded-lg border p-6 shadow-card space-y-4">
@@ -326,6 +628,7 @@ export default function SettingsPage() {
               className="w-64"
               value={form.apiEndpoint || ''}
               onChange={(event) => setForm((current) => ({ ...current, apiEndpoint: event.target.value }))}
+              disabled={isSaving}
             />
           </div>
           <div className="flex items-center justify-between p-3 border rounded-md gap-4">
@@ -338,10 +641,10 @@ export default function SettingsPage() {
               className="w-64"
               value={form.webhookUrl || ''}
               onChange={(event) => setForm((current) => ({ ...current, webhookUrl: event.target.value }))}
-              disabled={!canEditBoardWebhook}
+              disabled={!canEditBoardWebhook || isSaving}
             />
           </div>
-          {!canEditBoardWebhook && activeBoard && (
+          {!canEditBoardWebhook && selectedBoard && (
             <p className="text-xs text-muted-foreground px-3">רק בעל הלוח יכול לשנות את ה-webhook המשותף של הלוח.</p>
           )}
           <div className="flex items-center justify-between p-3 border rounded-md">
@@ -373,13 +676,16 @@ export default function SettingsPage() {
               className="w-64"
               value={form.emailProvider || ''}
               onChange={(event) => setForm((current) => ({ ...current, emailProvider: event.target.value }))}
+              disabled={isSaving}
             />
           </div>
         </div>
       </section>
 
       <div className="flex justify-start">
-        <Button onClick={() => void handleSave()}>שמור הגדרות</Button>
+        <Button onClick={() => void handleSave()} disabled={isSaving}>
+          {isSaving ? 'שומר...' : 'שמור הגדרות'}
+        </Button>
       </div>
     </div>
   );

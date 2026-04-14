@@ -19,6 +19,14 @@ async function fetchProfile(userId: string) {
   return data ? mapProfileToUser(data) : null;
 }
 
+function getEmailRedirectTo() {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  return `${window.location.origin}/auth`;
+}
+
 export const authApi = {
   async getCurrentUser(): Promise<AuthenticatedUser | null> {
     ensureSupabaseConfigured();
@@ -63,6 +71,7 @@ export const authApi = {
       password,
       options: {
         data: { name },
+        emailRedirectTo: getEmailRedirectTo(),
       },
     });
 

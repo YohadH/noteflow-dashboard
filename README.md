@@ -8,10 +8,13 @@ The frontend is now wired to a Supabase backend while keeping the existing UI in
 2. Copy `.env.example` to `.env` and fill in:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_WEB_PUSH_PUBLIC_KEY`
 3. Apply the SQL migrations in order:
    - [supabase/migrations/20260413_initial_schema.sql](supabase/migrations/20260413_initial_schema.sql)
    - [supabase/migrations/20260414_shared_boards.sql](supabase/migrations/20260414_shared_boards.sql)
    - [supabase/migrations/20260415_board_webhooks.sql](supabase/migrations/20260415_board_webhooks.sql)
+   - [supabase/migrations/20260416_fix_board_rls_recursion.sql](supabase/migrations/20260416_fix_board_rls_recursion.sql)
+   - [supabase/migrations/20260417_web_push_support.sql](supabase/migrations/20260417_web_push_support.sql)
 4. Run the app with `npm run dev`.
 
 ## What Was Added
@@ -37,6 +40,11 @@ The frontend is now wired to a Supabase backend while keeping the existing UI in
 ## Notes
 
 - If Supabase email confirmation is enabled, signup may require email verification before the user can enter the app.
+- Web Push requires:
+  - `VITE_WEB_PUSH_PUBLIC_KEY` in the frontend env
+  - `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`, and `WEB_PUSH_VAPID_SUBJECT` as Supabase function secrets
+  - deploying `process-alerts` again after updating the function
+- iPhone web push requires the site to be added to the Home Screen and opened as an installed web app.
 - `process-alerts` now posts due alerts to the `Webhook URL` saved on the active board. Shared/family boards can use one shared webhook destination.
 - To enable webhook delivery in Supabase:
   - Deploy the function: `supabase functions deploy process-alerts`

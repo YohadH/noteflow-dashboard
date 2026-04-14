@@ -433,6 +433,42 @@ export interface Database {
         };
         Relationships: [];
       };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          subscription: Json;
+          user_agent: string | null;
+          created_at: string;
+          updated_at: string;
+          last_used_at: string;
+          last_error: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          subscription: Json;
+          user_agent?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          last_used_at?: string;
+          last_error?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          subscription?: Json;
+          user_agent?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          last_used_at?: string;
+          last_error?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

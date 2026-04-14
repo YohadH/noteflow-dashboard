@@ -1,0 +1,25 @@
+{
+  "name": "NoteFlow",
+  "short_name": "NoteFlow",
+  "description": "ניהול פתקים, תזכורות והתראות",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/placeholder.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.ico",
+      "type": "image/x-icon",
+      "sizes": "48x48 32x32 16x16"
+    }
+  ]
+}

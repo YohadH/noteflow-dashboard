@@ -2,7 +2,7 @@ import { useNoteStore } from '@/stores/noteStore';
 import { PriorityBadge } from '@/components/PriorityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { alertStatusConfig, formatDateTime } from '@/lib/noteUtils';
-import { AlertTriangle, Wifi, Mail, Bell } from 'lucide-react';
+import { AlertTriangle, Wifi, Mail, Bell, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AlertChannel } from '@/types';
 
@@ -10,12 +10,14 @@ const channelIcon: Record<AlertChannel, React.ReactNode> = {
   email: <Mail className="h-3.5 w-3.5" />,
   'in-app': <Bell className="h-3.5 w-3.5" />,
   webhook: <Wifi className="h-3.5 w-3.5" />,
+  push: <Smartphone className="h-3.5 w-3.5" />,
 };
 
 const channelLabel: Record<AlertChannel, string> = {
   email: 'אימייל',
   'in-app': 'באפליקציה',
   webhook: 'webhook',
+  push: 'push',
 };
 
 export default function AlertsPage() {

@@ -171,18 +171,28 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
 
   updateSettings: async (settings) => {
     const selectedBoard = get().boards.find((board) => board.id === settings.activeBoardId);
-    const nextSettings = await settingsApi.update(settings);
 
-    if (selectedBoard?.role === 'owner' && settings.activeBoardId) {
-      await boardsApi.updateIntegration(settings.activeBoardId, {
-        webhookUrl: settings.webhookUrl,
-        n8nConnected: settings.n8nConnected,
-      });
+    try {
+      await settingsApi.update(settings);
+
+      if (selectedBoard?.role === 'owner' && settings.activeBoardId) {
+        await boardsApi.updateIntegration(settings.activeBoardId, {
+          webhookUrl: settings.webhookUrl,
+          n8nConnected: settings.n8nConnected,
+        });
+      }
+    } catch (error) {
+      try {
+        await get().loadUserData();
+      } catch {
+        // If reloading also fails, keep the original error surface.
+      }
+
+      throw error;
     }
 
-    set({ settings: nextSettings });
     await get().loadUserData();
-    return nextSettings;
+    return get().settings;
   },
 
   connectBoardUser: async (email) => {
