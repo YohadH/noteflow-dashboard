@@ -20,7 +20,7 @@ export const tagsApi = {
     return (data || []).map(mapTag);
   },
 
-  async create(name: string, boardId: string, color = '#6b7280'): Promise<Tag> {
+  async create(name: string, boardId: string, color = '#6b7280', isShareable = false): Promise<Tag> {
     ensureSupabaseConfigured();
 
     const userId = await getRequiredUserId();
@@ -31,6 +31,7 @@ export const tagsApi = {
         board_id: boardId,
         name,
         color,
+        is_shareable: isShareable,
       })
       .select('*')
       .single();
@@ -40,5 +41,38 @@ export const tagsApi = {
     }
 
     return mapTag(data);
+  },
+
+  async update(tagId: string, updates: Pick<Tag, 'name' | 'color' | 'isShareable'>): Promise<Tag> {
+    ensureSupabaseConfigured();
+
+    const { data, error } = await supabase
+      .from('tags')
+      .update({
+        name: updates.name,
+        color: updates.color,
+        is_shareable: updates.isShareable,
+      })
+      .eq('id', tagId)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapTag(data);
+  },
+
+  async remove(tagId: string): Promise<void> {
+    ensureSupabaseConfigured();
+
+    const { error } = await supabase.rpc('delete_tag_definition', {
+      target_tag_id: tagId,
+    });
+
+    if (error) {
+      throw error;
+    }
   },
 };

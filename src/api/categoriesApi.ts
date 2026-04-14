@@ -21,7 +21,7 @@ export const categoriesApi = {
     return (data || []).map(mapCategory);
   },
 
-  async create(name: string, boardId: string): Promise<Category> {
+  async create(name: string, boardId: string, isShareable = false): Promise<Category> {
     ensureSupabaseConfigured();
 
     const userId = await getRequiredUserId();
@@ -31,6 +31,7 @@ export const categoriesApi = {
         user_id: userId,
         board_id: boardId,
         name,
+        is_shareable: isShareable,
       })
       .select('*')
       .single();
@@ -40,5 +41,37 @@ export const categoriesApi = {
     }
 
     return mapCategory(data);
+  },
+
+  async update(categoryId: string, updates: Pick<Category, 'name' | 'isShareable'>): Promise<Category> {
+    ensureSupabaseConfigured();
+
+    const { data, error } = await supabase
+      .from('categories')
+      .update({
+        name: updates.name,
+        is_shareable: updates.isShareable,
+      })
+      .eq('id', categoryId)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapCategory(data);
+  },
+
+  async remove(categoryId: string): Promise<void> {
+    ensureSupabaseConfigured();
+
+    const { error } = await supabase.rpc('delete_category_definition', {
+      target_category_id: categoryId,
+    });
+
+    if (error) {
+      throw error;
+    }
   },
 };

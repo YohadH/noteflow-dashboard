@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Note, Priority } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { X, Pin, Mail, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Mail, Pin, X } from 'lucide-react';
 import { useNoteStore } from '@/stores/noteStore';
+import { isNoteShared } from '@/lib/noteSharing';
 
 interface NoteEditorProps {
   note?: Note | null;
@@ -53,31 +54,15 @@ function toDateInputValue(iso?: string) {
   return shifted.toISOString().slice(0, 10);
 }
 
-function toDateTimeLocalValue(iso?: string) {
-  if (!iso) {
-    return '';
-  }
-
-  const date = new Date(iso);
-  const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return shifted.toISOString().slice(0, 16);
-}
-
-function fromDateTimeLocalValue(value: string) {
-  return value ? new Date(value).toISOString() : undefined;
-}
-
 function getFutureDateTimeFloor() {
   const nextMinute = new Date(Date.now() + 60000);
   nextMinute.setSeconds(0, 0);
-  return toDateTimeLocalValue(nextMinute.toISOString());
-}
-
-function toLocalDateValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const year = nextMinute.getFullYear();
+  const month = String(nextMinute.getMonth() + 1).padStart(2, '0');
+  const day = String(nextMinute.getDate()).padStart(2, '0');
+  const hours = String(nextMinute.getHours()).padStart(2, '0');
+  const minutes = String(nextMinute.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function splitReminderDateTime(iso?: string) {
@@ -87,14 +72,13 @@ function splitReminderDateTime(iso?: string) {
 
   const date = new Date(iso);
   return {
-    date: toLocalDateValue(date),
+    date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
     time: `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
   };
 }
 
 function normalizeTimeInput(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 4);
-
   if (digits.length <= 2) {
     return digits;
   }
@@ -146,6 +130,13 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
   const [reminderDate, setReminderDate] = useState('');
   const [reminderTime, setReminderTime] = useState('');
 
+  const sharedByCategory = categories.some((category) => category.isShareable && category.name === form.category);
+  const sharedTags = useMemo(
+    () => allTags.filter((tag) => tag.isShareable && form.tags.includes(tag.name)),
+    [allTags, form.tags],
+  );
+  const noteWillBeShared = isNoteShared(form, categories, allTags);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -161,15 +152,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
     setDirty(false);
     setIsSaving(false);
     setValidationError(null);
-  }, [open, note, defaults]);
-
-  useEffect(() => {
-    if (!open || form.category || !categories.length) {
-      return;
-    }
-
-    setForm((current) => ({ ...current, category: categories[0].name }));
-  }, [categories, form.category, open]);
+  }, [defaults, note, open]);
 
   const update = <K extends keyof Note>(key: K, value: Note[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -222,7 +205,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
       });
       onClose();
     } catch {
-      // The parent already handles user-facing error feedback.
+      // parent handles toast
     } finally {
       setIsSaving(false);
     }
@@ -230,15 +213,11 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isNew ? 'פתק חדש' : 'עריכת פתק'}
-            {dirty && (
-              <span className="text-xs bg-status-pending/10 text-status-pending px-2 py-0.5 rounded-full">
-                לא נשמר
-              </span>
-            )}
+            {dirty && <span className="rounded-full bg-status-pending/10 px-2 py-0.5 text-xs text-status-pending">לא נשמר</span>}
           </DialogTitle>
         </DialogHeader>
 
@@ -264,7 +243,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>עדיפות</Label>
               <Select value={form.priority} onValueChange={(value) => update('priority', value as Priority)}>
@@ -281,14 +260,19 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             </div>
             <div>
               <Label>קטגוריה</Label>
-              <Select value={form.category || undefined} onValueChange={(value) => update('category', value)}>
+              <Select
+                value={form.category || '__none__'}
+                onValueChange={(value) => update('category', (value === '__none__' ? '' : value) as Note['category'])}
+              >
                 <SelectTrigger className="mt-1.5">
                   <SelectValue placeholder="בחר קטגוריה" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">ללא קטגוריה</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.name}>
                       {category.name}
+                      {category.isShareable ? ' · משותף' : ' · פרטי'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -296,15 +280,13 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>תאריך יעד</Label>
               <Input
                 type="date"
                 value={toDateInputValue(form.dueDate)}
-                onChange={(event) =>
-                  update('dueDate', event.target.value ? new Date(event.target.value).toISOString() : undefined)
-                }
+                onChange={(event) => update('dueDate', event.target.value ? new Date(event.target.value).toISOString() : undefined)}
                 className="mt-1.5"
               />
             </div>
@@ -327,7 +309,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
                   onChange={(event) => updateReminder(reminderDate, normalizeTimeInput(event.target.value))}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">השעה נשמרת בפורמט 24 שעות HH:MM ומאפשרת שעה עתידית בלבד.</p>
+              <p className="mt-1 text-xs text-muted-foreground">השעה נשמרת בפורמט 24 שעות HH:MM ומאפשרת שעה עתידית בלבד.</p>
             </div>
           </div>
 
@@ -335,7 +317,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
 
           <div>
             <Label>תגיות</Label>
-            <div className="flex flex-wrap gap-2 mt-1.5">
+            <div className="mt-1.5 flex flex-wrap gap-2">
               {allTags.map((tag) => (
                 <Badge
                   key={tag.id}
@@ -344,10 +326,23 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
                   onClick={() => toggleTag(tag.name)}
                 >
                   {tag.name}
-                  {form.tags.includes(tag.name) && <X className="h-3 w-3 mr-1" />}
+                  {tag.isShareable ? ' · משותף' : ''}
+                  {form.tags.includes(tag.name) && <X className="mr-1 h-3 w-3" />}
                 </Badge>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            {noteWillBeShared ? (
+              <p>
+                הפתק הזה ישותף עם חברי הלוח.
+                {sharedByCategory ? ' הקטגוריה שנבחרה משותפת.' : ''}
+                {sharedTags.length > 0 ? ` תגיות משותפות פעילות: ${sharedTags.map((tag) => tag.name).join(', ')}.` : ''}
+              </p>
+            ) : (
+              <p>הפתק הזה יישאר פרטי ויופיע רק אצל יוצר הפתק.</p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-6">
@@ -357,7 +352,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             </label>
             <label className="flex items-center gap-2 text-sm">
               <Switch checked={form.hasAlert} onCheckedChange={(value) => update('hasAlert', value)} />
-              <AlertTriangle className="h-4 w-4" /> התראה
+              <AlertTriangle className="h-4 w-4" /> התראה לפתק
             </label>
             <label className="flex items-center gap-2 text-sm">
               <Switch checked={form.hasEmailAction} onCheckedChange={(value) => update('hasEmailAction', value)} />
@@ -365,7 +360,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             </label>
           </div>
 
-          <div className="flex justify-start gap-3 pt-2 border-t">
+          <div className="flex justify-start gap-3 border-t pt-2">
             <Button onClick={() => void handleSave()} disabled={isSaving}>
               {isNew ? 'צור פתק' : 'שמור שינויים'}
             </Button>

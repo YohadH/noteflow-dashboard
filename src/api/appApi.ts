@@ -6,6 +6,7 @@ import { notesApi } from './notesApi';
 import { remindersApi } from './remindersApi';
 import { settingsApi } from './settingsApi';
 import { tagsApi } from './tagsApi';
+import { decorateNotesWithSharing } from '@/lib/noteSharing';
 
 export const appApi = {
   async loadAll() {
@@ -41,7 +42,7 @@ export const appApi = {
       ]);
 
     return {
-      notes,
+      notes: decorateNotesWithSharing(notes, categories, tags),
       reminders,
       alerts,
       emailActions,

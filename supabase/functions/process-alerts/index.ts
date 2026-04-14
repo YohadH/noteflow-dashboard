@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import * as webpush from 'web-push';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import webpush from 'npm:web-push@3.6.7';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -7,7 +7,6 @@ const webhookAuthToken = Deno.env.get('ALERT_WEBHOOK_AUTH_TOKEN') || '';
 const vapidSubject = Deno.env.get('WEB_PUSH_VAPID_SUBJECT') || '';
 const vapidPublicKey = Deno.env.get('WEB_PUSH_VAPID_PUBLIC_KEY') || '';
 const vapidPrivateKey = Deno.env.get('WEB_PUSH_VAPID_PRIVATE_KEY') || '';
-const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 type AlertRow = {
   id: string;
@@ -71,7 +70,15 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-async function loadAlertContext(boardId: string, userId: string) {
+function getSupabaseClient() {
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
+}
+
+async function loadAlertContext(supabase: ReturnType<typeof getSupabaseClient>, boardId: string, userId: string) {
   const [
     { data: boardData, error: boardError },
     { data: settingsData, error: settingsError },
@@ -101,7 +108,7 @@ async function loadAlertContext(boardId: string, userId: string) {
   };
 }
 
-async function loadPushRecipients(boardId: string) {
+async function loadPushRecipients(supabase: ReturnType<typeof getSupabaseClient>, boardId: string) {
   const { data: boardMembers, error: boardMembersError } = await supabase
     .from('board_members')
     .select('user_id')
@@ -112,7 +119,6 @@ async function loadPushRecipients(boardId: string) {
   }
 
   const userIds = [...new Set((boardMembers || []).map((member) => member.user_id))];
-
   if (!userIds.length) {
     return [] as PushSubscriptionRow[];
   }
@@ -138,11 +144,19 @@ async function loadPushRecipients(boardId: string) {
   );
 }
 
-async function handleInvalidSubscription(subscriptionId: string, endpoint: string, message: string) {
+async function handleInvalidSubscription(
+  supabase: ReturnType<typeof getSupabaseClient>,
+  subscriptionId: string,
+  endpoint: string,
+) {
   await supabase.from('push_subscriptions').delete().eq('id', subscriptionId).eq('endpoint', endpoint);
 }
 
-async function updateSubscriptionError(subscriptionId: string, message: string) {
+async function updateSubscriptionError(
+  supabase: ReturnType<typeof getSupabaseClient>,
+  subscriptionId: string,
+  message: string,
+) {
   await supabase
     .from('push_subscriptions')
     .update({
@@ -152,7 +166,7 @@ async function updateSubscriptionError(subscriptionId: string, message: string) 
     .eq('id', subscriptionId);
 }
 
-async function markSubscriptionUsed(subscriptionId: string) {
+async function markSubscriptionUsed(supabase: ReturnType<typeof getSupabaseClient>, subscriptionId: string) {
   await supabase
     .from('push_subscriptions')
     .update({
@@ -163,11 +177,12 @@ async function markSubscriptionUsed(subscriptionId: string) {
 }
 
 async function deliverPushNotifications(
+  supabase: ReturnType<typeof getSupabaseClient>,
   alert: AlertRow,
   board: BoardRow | null,
   profile: ProfileRow | null,
 ): Promise<DeliveryResult> {
-  const recipients = await loadPushRecipients(alert.board_id);
+  const recipients = await loadPushRecipients(supabase, alert.board_id);
 
   if (!recipients.length) {
     return { attempted: false, delivered: false, channel: 'push' };
@@ -177,11 +192,7 @@ async function deliverPushNotifications(
     throw new Error('Web Push VAPID secrets are not configured.');
   }
 
-  try {
-    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to initialize Web Push VAPID configuration.');
-  }
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
   const payload = JSON.stringify({
     title: `תזכורת: ${alert.notes?.title || 'פתק חדש'}`,
@@ -214,7 +225,7 @@ async function deliverPushNotifications(
       });
 
       deliveredCount += 1;
-      await markSubscriptionUsed(recipient.id);
+      await markSubscriptionUsed(supabase, recipient.id);
     } catch (error) {
       const statusCode =
         typeof error === 'object' && error && 'statusCode' in error && typeof error.statusCode === 'number'
@@ -223,9 +234,9 @@ async function deliverPushNotifications(
       const message = error instanceof Error ? error.message : 'Push delivery failed';
 
       if (statusCode === 404 || statusCode === 410) {
-        await handleInvalidSubscription(recipient.id, recipient.endpoint, message);
+        await handleInvalidSubscription(supabase, recipient.id, recipient.endpoint);
       } else {
-        await updateSubscriptionError(recipient.id, message);
+        await updateSubscriptionError(supabase, recipient.id, message);
       }
 
       errors.push(message);
@@ -325,66 +336,82 @@ async function deliverWebhook(
 }
 
 Deno.serve(async () => {
-  const now = new Date().toISOString();
+  try {
+    const supabase = getSupabaseClient();
+    const now = new Date().toISOString();
 
-  const { data: alerts, error } = await supabase
-    .from('alerts')
-    .select('id, user_id, board_id, note_id, channel, status, scheduled_at, type, notes:notes(id, title, content, priority)')
-    .in('status', ['active', 'scheduled'])
-    .lte('scheduled_at', now);
+    const { data: alerts, error } = await supabase
+      .from('alerts')
+      .select('id, user_id, board_id, note_id, channel, status, scheduled_at, type, notes:notes(id, title, content, priority)')
+      .in('status', ['active', 'scheduled'])
+      .lte('scheduled_at', now);
 
-  if (error) {
-    return jsonResponse({ error: error.message }, 500);
-  }
-
-  let processed = 0;
-  let failed = 0;
-
-  for (const alert of (alerts as AlertRow[] | null) || []) {
-    try {
-      const { board, settings, profile } = await loadAlertContext(alert.board_id, alert.user_id);
-      const pushResult = await deliverPushNotifications(alert, board, profile);
-      const deliveryResult =
-        pushResult.delivered || pushResult.attempted
-          ? pushResult.delivered
-            ? pushResult
-            : await deliverWebhook(alert, board, settings, profile)
-          : await deliverWebhook(alert, board, settings, profile);
-
-      const finalChannel =
-        pushResult.delivered
-          ? 'push'
-          : deliveryResult.delivered
-            ? deliveryResult.channel
-            : 'in-app';
-
-      if ((pushResult.attempted || deliveryResult.attempted) && !pushResult.delivered && !deliveryResult.delivered) {
-        throw new Error(pushResult.message || deliveryResult.message || 'Alert delivery failed');
-      }
-
-      await supabase
-        .from('alerts')
-        .update({
-          status: 'sent',
-          channel: finalChannel,
-          last_error: null,
-        })
-        .eq('id', alert.id);
-
-      processed += 1;
-    } catch (deliveryError) {
-      await supabase
-        .from('alerts')
-        .update({
-          status: 'failed',
-          channel: 'push',
-          last_error: deliveryError instanceof Error ? deliveryError.message : 'Alert delivery failed',
-        })
-        .eq('id', alert.id);
-
-      failed += 1;
+    if (error) {
+      return jsonResponse({ error: error.message }, 500);
     }
-  }
 
-  return jsonResponse({ processed, failed });
+    let processed = 0;
+    let failed = 0;
+
+    for (const alert of (alerts as AlertRow[] | null) || []) {
+      try {
+        const { board, settings, profile } = await loadAlertContext(supabase, alert.board_id, alert.user_id);
+        const pushResult = await deliverPushNotifications(supabase, alert, board, profile);
+        const webhookResult =
+          pushResult.delivered || pushResult.attempted
+            ? pushResult.delivered
+              ? pushResult
+              : await deliverWebhook(alert, board, settings, profile)
+            : await deliverWebhook(alert, board, settings, profile);
+
+        const finalChannel =
+          pushResult.delivered
+            ? 'push'
+            : webhookResult.delivered
+              ? webhookResult.channel
+              : 'in-app';
+
+        if ((pushResult.attempted || webhookResult.attempted) && !pushResult.delivered && !webhookResult.delivered) {
+          throw new Error(pushResult.message || webhookResult.message || 'Alert delivery failed');
+        }
+
+        await supabase
+          .from('alerts')
+          .update({
+            status: 'sent',
+            channel: finalChannel,
+            last_error: null,
+          })
+          .eq('id', alert.id);
+
+        processed += 1;
+      } catch (error) {
+        console.error('alert delivery failed', {
+          alertId: alert.id,
+          message: error instanceof Error ? error.message : 'Unknown alert delivery error',
+        });
+
+        await supabase
+          .from('alerts')
+          .update({
+            status: 'failed',
+            channel: 'push',
+            last_error: error instanceof Error ? error.message : 'Alert delivery failed',
+          })
+          .eq('id', alert.id);
+
+        failed += 1;
+      }
+    }
+
+    return jsonResponse({ processed, failed });
+  } catch (error) {
+    console.error('process-alerts fatal error', error);
+    return jsonResponse(
+      {
+        error: error instanceof Error ? error.message : 'Unexpected process-alerts failure',
+      },
+      500,
+    );
+  }
 });

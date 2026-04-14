@@ -92,6 +92,8 @@ export function mapCategory(row: Tables<'categories'>): Category {
     name: row.name,
     icon: row.icon || undefined,
     color: row.color || undefined,
+    isShareable: row.is_shareable,
+    ownerUserId: row.user_id,
   };
 }
 
@@ -100,6 +102,8 @@ export function mapTag(row: Tables<'tags'>): Tag {
     id: row.id,
     name: row.name,
     color: row.color,
+    isShareable: row.is_shareable,
+    ownerUserId: row.user_id,
   };
 }
 
@@ -119,6 +123,7 @@ export function mapNote(row: Tables<'notes'>): Note {
     pinned: row.pinned,
     hasAlert: row.has_alert,
     hasEmailAction: row.has_email_action,
+    ownerUserId: row.user_id,
   };
 }
 

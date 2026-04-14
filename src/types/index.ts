@@ -21,6 +21,8 @@ export interface Note {
   pinned: boolean;
   hasAlert: boolean;
   hasEmailAction: boolean;
+  ownerUserId?: string;
+  isShared?: boolean;
 }
 
 export interface Reminder {
@@ -60,6 +62,8 @@ export interface Tag {
   id: string;
   name: string;
   color: string;
+  isShareable: boolean;
+  ownerUserId?: string;
 }
 
 export interface Category {
@@ -67,6 +71,8 @@ export interface Category {
   name: string;
   icon?: string;
   color?: string;
+  isShareable: boolean;
+  ownerUserId?: string;
 }
 
 export interface Board {

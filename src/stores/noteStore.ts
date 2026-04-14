@@ -39,8 +39,12 @@ interface NoteStore {
   loadUserData: (_userId?: string) => Promise<void>;
   saveUserData: (_userId?: string) => Promise<void>;
   clearUserData: () => void;
-  addCategory: (name: string) => Promise<Category>;
-  addTag: (name: string, color?: string) => Promise<Tag>;
+  addCategory: (name: string, isShareable?: boolean) => Promise<Category>;
+  updateCategory: (categoryId: string, updates: Pick<Category, 'name' | 'isShareable'>) => Promise<Category>;
+  deleteCategory: (categoryId: string) => Promise<void>;
+  addTag: (name: string, color?: string, isShareable?: boolean) => Promise<Tag>;
+  updateTag: (tagId: string, updates: Pick<Tag, 'name' | 'color' | 'isShareable'>) => Promise<Tag>;
+  deleteTag: (tagId: string) => Promise<void>;
   updateSettings: (settings: UserSettings) => Promise<UserSettings>;
   connectBoardUser: (email: string) => Promise<void>;
   removeBoardUser: (userId: string) => Promise<void>;
@@ -147,26 +151,54 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     await get().loadUserData();
   },
 
-  addCategory: async (name) => {
+  addCategory: async (name, isShareable = false) => {
     const boardId = get().settings.activeBoardId;
     if (!boardId) {
       throw new Error('No active board is selected.');
     }
 
-    const category = await categoriesApi.create(name, boardId);
+    const category = await categoriesApi.create(name, boardId, isShareable);
     set((state) => ({ categories: [...state.categories, category] }));
     return category;
   },
 
-  addTag: async (name, color) => {
+  updateCategory: async (categoryId, updates) => {
+    const category = await categoriesApi.update(categoryId, updates);
+    set((state) => ({
+      categories: state.categories.map((item) => (item.id === category.id ? category : item)),
+    }));
+    await get().loadUserData();
+    return category;
+  },
+
+  deleteCategory: async (categoryId) => {
+    await categoriesApi.remove(categoryId);
+    await get().loadUserData();
+  },
+
+  addTag: async (name, color, isShareable = false) => {
     const boardId = get().settings.activeBoardId;
     if (!boardId) {
       throw new Error('No active board is selected.');
     }
 
-    const tag = await tagsApi.create(name, boardId, color);
+    const tag = await tagsApi.create(name, boardId, color, isShareable);
     set((state) => ({ tags: [...state.tags, tag] }));
     return tag;
+  },
+
+  updateTag: async (tagId, updates) => {
+    const tag = await tagsApi.update(tagId, updates);
+    set((state) => ({
+      tags: state.tags.map((item) => (item.id === tag.id ? tag : item)),
+    }));
+    await get().loadUserData();
+    return tag;
+  },
+
+  deleteTag: async (tagId) => {
+    await tagsApi.remove(tagId);
+    await get().loadUserData();
   },
 
   updateSettings: async (settings) => {

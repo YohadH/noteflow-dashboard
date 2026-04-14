@@ -189,6 +189,7 @@ export interface Database {
           name: string;
           icon: string | null;
           color: string | null;
+          is_shareable: boolean;
           position: number;
           created_at: string;
           updated_at: string;
@@ -200,6 +201,7 @@ export interface Database {
           name: string;
           icon?: string | null;
           color?: string | null;
+          is_shareable?: boolean;
           position?: number;
           created_at?: string;
           updated_at?: string;
@@ -211,6 +213,7 @@ export interface Database {
           name?: string;
           icon?: string | null;
           color?: string | null;
+          is_shareable?: boolean;
           position?: number;
           created_at?: string;
           updated_at?: string;
@@ -224,6 +227,7 @@ export interface Database {
           board_id: string;
           name: string;
           color: string;
+          is_shareable: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -233,6 +237,7 @@ export interface Database {
           board_id: string;
           name: string;
           color?: string;
+          is_shareable?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -242,6 +247,7 @@ export interface Database {
           board_id?: string;
           name?: string;
           color?: string;
+          is_shareable?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -491,6 +497,18 @@ export interface Database {
       revoke_board_invitation: {
         Args: {
           invitation_id: string;
+        };
+        Returns: Json;
+      };
+      delete_category_definition: {
+        Args: {
+          target_category_id: string;
+        };
+        Returns: Json;
+      };
+      delete_tag_definition: {
+        Args: {
+          target_tag_id: string;
         };
         Returns: Json;
       };
