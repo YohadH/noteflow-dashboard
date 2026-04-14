@@ -170,14 +170,18 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   },
 
   updateSettings: async (settings) => {
-    const previousBoardId = get().settings.activeBoardId;
+    const selectedBoard = get().boards.find((board) => board.id === settings.activeBoardId);
     const nextSettings = await settingsApi.update(settings);
-    set({ settings: nextSettings });
 
-    if (nextSettings.activeBoardId !== previousBoardId) {
-      await get().loadUserData();
+    if (selectedBoard?.role === 'owner' && settings.activeBoardId) {
+      await boardsApi.updateIntegration(settings.activeBoardId, {
+        webhookUrl: settings.webhookUrl,
+        n8nConnected: settings.n8nConnected,
+      });
     }
 
+    set({ settings: nextSettings });
+    await get().loadUserData();
     return nextSettings;
   },
 

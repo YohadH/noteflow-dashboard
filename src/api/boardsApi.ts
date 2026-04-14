@@ -11,6 +11,8 @@ type BoardMembershipRow = {
     owner_user_id: string;
     name: string;
     is_personal: boolean;
+    webhook_url: string | null;
+    n8n_connected: boolean;
     created_at: string;
     updated_at: string;
   } | null;
@@ -35,7 +37,7 @@ export const boardsApi = {
 
     const { data, error } = await supabase
       .from('board_members')
-      .select('board_id, role, boards:boards!inner(id, owner_user_id, name, is_personal, created_at, updated_at)')
+      .select('board_id, role, boards:boards!inner(id, owner_user_id, name, is_personal, webhook_url, n8n_connected, created_at, updated_at)')
       .order('created_at', { foreignTable: 'boards', ascending: true });
 
     if (error) {
@@ -45,6 +47,32 @@ export const boardsApi = {
     return ((data as BoardMembershipRow[] | null) || [])
       .filter((row): row is BoardMembershipRow & { boards: NonNullable<BoardMembershipRow['boards']> } => Boolean(row.boards))
       .map((row) => mapBoard(row.boards, row.role));
+  },
+
+  async updateIntegration(boardId: string, integration: Pick<Board, 'webhookUrl' | 'n8nConnected'>): Promise<Board> {
+    ensureSupabaseConfigured();
+
+    const currentUserId = await getRequiredUserId();
+    const { data, error } = await supabase
+      .from('boards')
+      .update({
+        webhook_url: integration.webhookUrl?.trim() || null,
+        n8n_connected: integration.n8nConnected,
+      })
+      .eq('id', boardId)
+      .select('id, owner_user_id, name, is_personal, webhook_url, n8n_connected, created_at, updated_at')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    const boardRole =
+      currentUserId === data.owner_user_id
+        ? 'owner'
+        : 'member';
+
+    return mapBoard(data, boardRole);
   },
 
   async listMembers(boardId: string): Promise<BoardMember[]> {

@@ -52,6 +52,8 @@ export function mapBoard(
     ownerUserId: board.owner_user_id,
     isPersonal: board.is_personal,
     role,
+    webhookUrl: board.webhook_url || '',
+    n8nConnected: board.n8n_connected,
     createdAt: board.created_at,
     updatedAt: board.updated_at,
   };

@@ -8,12 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Bell, Tag, Plug, CheckCircle2, XCircle, Users, UserPlus, Trash2, House } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNoteStore } from '@/stores/noteStore';
-import { useUserStore } from '@/stores/userStore';
 import type { UserSettings } from '@/types';
 
 export default function SettingsPage() {
   const { toast } = useToast();
-  const currentUser = useUserStore((state) => state.currentUser);
   const {
     categories,
     tags,
@@ -33,10 +31,22 @@ export default function SettingsPage() {
   const [form, setForm] = useState<UserSettings>(settings);
   const [connectEmail, setConnectEmail] = useState('');
   const activeBoard = boards.find((board) => board.id === form.activeBoardId);
+  const canEditBoardWebhook = activeBoard?.role === 'owner';
 
   useEffect(() => {
     setForm(settings);
   }, [settings]);
+
+  const handleBoardSelectionChange = (boardId: string) => {
+    const selectedBoard = boards.find((board) => board.id === boardId);
+
+    setForm((current) => ({
+      ...current,
+      activeBoardId: boardId,
+      webhookUrl: selectedBoard?.webhookUrl || '',
+      n8nConnected: selectedBoard?.n8nConnected ?? false,
+    }));
+  };
 
   const handleSave = async () => {
     await updateSettings(form);
@@ -105,7 +115,7 @@ export default function SettingsPage() {
         <div className="grid md:grid-cols-[1fr_auto] gap-4 items-end">
           <div>
             <Label>בחר לוח</Label>
-            <Select value={form.activeBoardId} onValueChange={(value) => setForm((current) => ({ ...current, activeBoardId: value }))}>
+            <Select value={form.activeBoardId} onValueChange={handleBoardSelectionChange}>
               <SelectTrigger className="mt-1.5">
                 <SelectValue placeholder="בחר לוח" />
               </SelectTrigger>
@@ -320,31 +330,35 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between p-3 border rounded-md gap-4">
             <div>
-              <p className="text-sm font-medium">כתובת Webhook</p>
-              <p className="text-xs text-muted-foreground">קבל התראות דרך webhook</p>
+              <p className="text-sm font-medium">Webhook של הלוח הפעיל</p>
+              <p className="text-xs text-muted-foreground">כל המשתמשים בלוח הזה ישלחו התראות לאותה כתובת webhook</p>
             </div>
             <Input
               placeholder="https://hooks.example.com"
               className="w-64"
               value={form.webhookUrl || ''}
               onChange={(event) => setForm((current) => ({ ...current, webhookUrl: event.target.value }))}
+              disabled={!canEditBoardWebhook}
             />
           </div>
+          {!canEditBoardWebhook && activeBoard && (
+            <p className="text-xs text-muted-foreground px-3">רק בעל הלוח יכול לשנות את ה-webhook המשותף של הלוח.</p>
+          )}
           <div className="flex items-center justify-between p-3 border rounded-md">
             <div>
-              <p className="text-sm font-medium">חיבור n8n</p>
-              <p className="text-xs text-muted-foreground">מנוע אוטומציית תהליכים</p>
+              <p className="text-sm font-medium">מצב webhook משותף</p>
+              <p className="text-xs text-muted-foreground">אפשר להפנות ל-n8n או לכל endpoint שמקבל POST</p>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {form.n8nConnected ? (
+              {form.webhookUrl?.trim() ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 text-status-completed" />
-                  מחובר
+                  מוגדר
                 </>
               ) : (
                 <>
                   <XCircle className="h-4 w-4 text-status-failed" />
-                  לא מחובר
+                  לא מוגדר
                 </>
               )}
             </div>

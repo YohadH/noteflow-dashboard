@@ -12,8 +12,6 @@ function toSettingsWritePayload(settings: UserSettings) {
     default_snooze_interval: settings.defaultSnoozeInterval,
     active_board_id: settings.activeBoardId || null,
     api_endpoint: settings.apiEndpoint || null,
-    webhook_url: settings.webhookUrl || null,
-    n8n_connected: settings.n8nConnected,
     email_provider: settings.emailProvider || null,
   };
 }

@@ -8,7 +8,10 @@ The frontend is now wired to a Supabase backend while keeping the existing UI in
 2. Copy `.env.example` to `.env` and fill in:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-3. Apply the SQL in [supabase/migrations/20260413_initial_schema.sql](supabase/migrations/20260413_initial_schema.sql).
+3. Apply the SQL migrations in order:
+   - [supabase/migrations/20260413_initial_schema.sql](supabase/migrations/20260413_initial_schema.sql)
+   - [supabase/migrations/20260414_shared_boards.sql](supabase/migrations/20260414_shared_boards.sql)
+   - [supabase/migrations/20260415_board_webhooks.sql](supabase/migrations/20260415_board_webhooks.sql)
 4. Run the app with `npm run dev`.
 
 ## What Was Added
@@ -34,4 +37,9 @@ The frontend is now wired to a Supabase backend while keeping the existing UI in
 ## Notes
 
 - If Supabase email confirmation is enabled, signup may require email verification before the user can enter the app.
-- The edge function stubs currently mark alerts and email jobs as handled; wire them to your webhook, n8n, or email provider next.
+- `process-alerts` now posts due alerts to the `Webhook URL` saved on the active board. Shared/family boards can use one shared webhook destination.
+- To enable webhook delivery in Supabase:
+  - Deploy the function: `supabase functions deploy process-alerts`
+  - Optionally set a bearer token for your receiver: `supabase secrets set ALERT_WEBHOOK_AUTH_TOKEN=your-token`
+  - Schedule the function to run periodically, or invoke it from your own job runner.
+- Webhook payloads are sent as JSON with `x-noteflow-event: note.alert.triggered` and `x-noteflow-alert-id: <alert-id>` headers.

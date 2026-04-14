@@ -75,6 +75,8 @@ export interface Board {
   ownerUserId: string;
   isPersonal: boolean;
   role: BoardRole;
+  webhookUrl?: string;
+  n8nConnected: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -52,6 +52,8 @@ export interface Database {
           owner_user_id: string;
           name: string;
           is_personal: boolean;
+          webhook_url: string | null;
+          n8n_connected: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -60,6 +62,8 @@ export interface Database {
           owner_user_id: string;
           name: string;
           is_personal?: boolean;
+          webhook_url?: string | null;
+          n8n_connected?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -68,6 +72,8 @@ export interface Database {
           owner_user_id?: string;
           name?: string;
           is_personal?: boolean;
+          webhook_url?: string | null;
+          n8n_connected?: boolean;
           created_at?: string;
           updated_at?: string;
         };

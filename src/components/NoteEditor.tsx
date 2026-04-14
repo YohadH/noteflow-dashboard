@@ -73,6 +73,55 @@ function getFutureDateTimeFloor() {
   return toDateTimeLocalValue(nextMinute.toISOString());
 }
 
+function toLocalDateValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function splitReminderDateTime(iso?: string) {
+  if (!iso) {
+    return { date: '', time: '' };
+  }
+
+  const date = new Date(iso);
+  return {
+    date: toLocalDateValue(date),
+    time: `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+  };
+}
+
+function normalizeTimeInput(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function isValid24HourTime(value: string) {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
+}
+
+function combineReminderDateTime(dateValue: string, timeValue: string) {
+  if (!dateValue || !timeValue || !isValid24HourTime(timeValue)) {
+    return undefined;
+  }
+
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hours, minutes] = timeValue.split(':').map(Number);
+  const localDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+  if (Number.isNaN(localDate.getTime())) {
+    return undefined;
+  }
+
+  return localDate.toISOString();
+}
+
 export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditorProps) {
   const categories = useNoteStore((state) => state.categories);
   const allTags = useNoteStore((state) => state.tags);
@@ -82,14 +131,21 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
   const [isSaving, setIsSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [minReminderAt, setMinReminderAt] = useState(() => getFutureDateTimeFloor());
+  const [reminderDate, setReminderDate] = useState('');
+  const [reminderTime, setReminderTime] = useState('');
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
+    const initialDraft = buildDraft(note, defaults);
+    const initialReminder = splitReminderDateTime(initialDraft.reminderAt);
+
     setMinReminderAt(getFutureDateTimeFloor());
-    setForm(buildDraft(note, defaults));
+    setReminderDate(initialReminder.date);
+    setReminderTime(initialReminder.time);
+    setForm(initialDraft);
     setDirty(false);
     setIsSaving(false);
     setValidationError(null);
@@ -109,6 +165,12 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
     setValidationError(null);
   };
 
+  const updateReminder = (nextDate: string, nextTime: string) => {
+    setReminderDate(nextDate);
+    setReminderTime(nextTime);
+    update('reminderAt', combineReminderDateTime(nextDate, nextTime));
+  };
+
   const toggleTag = (tagName: string) => {
     const nextTags = form.tags.includes(tagName)
       ? form.tags.filter((tag) => tag !== tagName)
@@ -118,7 +180,21 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
   };
 
   const handleSave = async () => {
-    if (form.reminderAt && new Date(form.reminderAt).getTime() <= Date.now()) {
+    if (reminderDate || reminderTime) {
+      if (!reminderDate || !reminderTime) {
+        setValidationError('יש לבחור גם תאריך וגם שעה לתזכורת.');
+        return;
+      }
+
+      if (!isValid24HourTime(reminderTime)) {
+        setValidationError('יש להזין שעה בפורמט 24 שעות, למשל 14:30.');
+        return;
+      }
+    }
+
+    const normalizedReminderAt = combineReminderDateTime(reminderDate, reminderTime);
+
+    if (normalizedReminderAt && new Date(normalizedReminderAt).getTime() <= Date.now()) {
       setValidationError('שעת התזכורת חייבת להיות בעתיד.');
       return;
     }
@@ -126,7 +202,11 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
     setIsSaving(true);
 
     try {
-      await onSave({ ...form, updatedAt: new Date().toISOString() });
+      await onSave({
+        ...form,
+        reminderAt: normalizedReminderAt,
+        updatedAt: new Date().toISOString(),
+      });
       onClose();
     } catch {
       // The parent already handles user-facing error feedback.
@@ -217,14 +297,24 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             </div>
             <div>
               <Label>תזכורת</Label>
-              <Input
-                type="datetime-local"
-                value={toDateTimeLocalValue(form.reminderAt)}
-                min={minReminderAt}
-                onChange={(event) => update('reminderAt', fromDateTimeLocalValue(event.target.value))}
-                className="mt-1.5"
-              />
-              <p className="text-xs text-muted-foreground mt-1">בחר שעה עתידית בפורמט 24 שעות.</p>
+              <div className="mt-1.5 grid grid-cols-[1fr_120px] gap-2">
+                <Input
+                  type="date"
+                  value={reminderDate}
+                  min={minReminderAt.slice(0, 10)}
+                  onChange={(event) => updateReminder(event.target.value, reminderTime)}
+                />
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  dir="ltr"
+                  placeholder="14:30"
+                  maxLength={5}
+                  value={reminderTime}
+                  onChange={(event) => updateReminder(reminderDate, normalizeTimeInput(event.target.value))}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">השעה נשמרת בפורמט 24 שעות HH:MM ומאפשרת שעה עתידית בלבד.</p>
             </div>
           </div>
 
