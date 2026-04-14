@@ -53,16 +53,18 @@ export default function AlertsPage() {
             ) : (
               <div className="space-y-2">
                 {group.items.map((alert) => (
-                  <div key={alert.id} className="flex items-center gap-4 bg-card rounded-lg border p-4 shadow-card hover:shadow-md transition-shadow">
-                    <PriorityBadge priority={alert.priority} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{alert.noteTitle}</p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span className="capitalize">{alert.type}</span>
-                        <span>{formatDateTime(alert.scheduledAt)}</span>
+                  <div key={alert.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 bg-card rounded-lg border p-4 shadow-card hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <PriorityBadge priority={alert.priority} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{alert.noteTitle}</p>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <span className="capitalize">{alert.type}</span>
+                          <span>{formatDateTime(alert.scheduledAt)}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 self-start sm:self-center">
                       <span className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
                         {channelIcon[alert.channel]}
                         <span>{channelLabel[alert.channel]}</span>

@@ -251,7 +251,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>עדיפות</Label>
               <Select value={form.priority} onValueChange={(value) => update('priority', value as Priority)}>
@@ -283,7 +283,7 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>תאריך יעד</Label>
               <Input
