@@ -12,11 +12,11 @@ export const pushSubscriptionsApi = {
       {
         user_id: userId,
         endpoint: subscription.endpoint,
-        subscription: payload,
+        subscription: payload as unknown as import('@/lib/supabase/types').Json,
         user_agent: navigator.userAgent,
         last_used_at: new Date().toISOString(),
         last_error: null,
-      },
+      } as any,
       { onConflict: 'endpoint' },
     );
 

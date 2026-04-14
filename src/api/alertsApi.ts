@@ -42,7 +42,7 @@ export const alertsApi = {
       throw error;
     }
 
-    return ((data as AlertQueryRow[] | null) || []).map((row) =>
+    return ((data as unknown as AlertQueryRow[] | null) || []).map((row) =>
       mapAlert(
         {
           id: row.id,
