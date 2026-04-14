@@ -44,7 +44,7 @@ export const boardsApi = {
       throw error;
     }
 
-    return ((data as BoardMembershipRow[] | null) || [])
+    return ((data as unknown as BoardMembershipRow[] | null) || [])
       .filter((row): row is BoardMembershipRow & { boards: NonNullable<BoardMembershipRow['boards']> } => Boolean(row.boards))
       .map((row) => mapBoard(row.boards, row.role));
   },
@@ -89,7 +89,7 @@ export const boardsApi = {
       throw error;
     }
 
-    return ((data as BoardMemberRow[] | null) || [])
+    return ((data as unknown as BoardMemberRow[] | null) || [])
       .filter((row): row is BoardMemberRow & { profiles: NonNullable<BoardMemberRow['profiles']> } => Boolean(row.profiles))
       .map((row) => mapBoardMember(row, row.profiles, currentUserId));
   },

@@ -35,7 +35,7 @@ export const remindersApi = {
       throw error;
     }
 
-    return ((data as ReminderQueryRow[] | null) || []).map((row) =>
+    return ((data as unknown as ReminderQueryRow[] | null) || []).map((row) =>
       mapReminder(
         {
           id: row.id,
