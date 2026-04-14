@@ -122,6 +122,18 @@ function combineReminderDateTime(dateValue: string, timeValue: string) {
   return localDate.toISOString();
 }
 
+function isSameInstant(first?: string, second?: string) {
+  if (!first && !second) {
+    return true;
+  }
+
+  if (!first || !second) {
+    return false;
+  }
+
+  return new Date(first).getTime() === new Date(second).getTime();
+}
+
 export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditorProps) {
   const categories = useNoteStore((state) => state.categories);
   const allTags = useNoteStore((state) => state.tags);
@@ -193,8 +205,9 @@ export function NoteEditor({ note, open, onClose, onSave, defaults }: NoteEditor
     }
 
     const normalizedReminderAt = combineReminderDateTime(reminderDate, reminderTime);
+    const reminderChanged = !isSameInstant(normalizedReminderAt, note?.reminderAt);
 
-    if (normalizedReminderAt && new Date(normalizedReminderAt).getTime() <= Date.now()) {
+    if (normalizedReminderAt && new Date(normalizedReminderAt).getTime() <= Date.now() && (isNew || reminderChanged)) {
       setValidationError('שעת התזכורת חייבת להיות בעתיד.');
       return;
     }
