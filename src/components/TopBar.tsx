@@ -10,6 +10,7 @@ import {
   Zap,
   LayoutDashboard,
   StickyNote,
+  CalendarDays,
   AlertTriangle,
   Mail,
   Flag,
