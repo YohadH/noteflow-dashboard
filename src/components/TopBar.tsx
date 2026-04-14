@@ -8,13 +8,6 @@ import {
   Menu,
   X,
   Zap,
-  LayoutDashboard,
-  StickyNote,
-  CalendarDays,
-  AlertTriangle,
-  Mail,
-  Flag,
-  Settings,
   LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,17 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const mobileNav = [
-  { label: 'לוח בקרה', path: '/', icon: LayoutDashboard },
-  { label: 'פתקים', path: '/notes', icon: StickyNote },
-  { label: 'לוח שנה', path: '/calendar', icon: CalendarDays },
-  { label: 'תזכורות', path: '/reminders', icon: Bell },
-  { label: 'התראות', path: '/alerts', icon: AlertTriangle },
-  { label: 'פעולות אימייל', path: '/email-actions', icon: Mail },
-  { label: 'תצוגת עדיפות', path: '/priorities', icon: Flag },
-  { label: 'הגדרות', path: '/settings', icon: Settings },
-];
+import { primaryNavigationItems } from '@/lib/navigation';
 
 interface TopBarProps {
   onNewNote: () => void;
@@ -121,8 +104,8 @@ export function TopBar({ onNewNote }: TopBarProps) {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-foreground/30" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-64 bg-sidebar animate-slide-in">
-            <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border">
+          <div className="absolute right-0 top-0 bottom-0 w-64 bg-sidebar animate-slide-in flex flex-col max-h-screen">
+            <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
                   <Zap className="h-4 w-4 text-sidebar-primary-foreground" />
@@ -133,8 +116,9 @@ export function TopBar({ onNewNote }: TopBarProps) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="py-3 px-2 space-y-0.5">
-              {mobileNav.map((item) => (
+
+            <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+              {primaryNavigationItems.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
@@ -146,7 +130,7 @@ export function TopBar({ onNewNote }: TopBarProps) {
                       : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   )}
                 >
-                  <item.icon className="h-4.5 w-4.5" />
+                  <item.icon className="h-4.5 w-4.5 shrink-0" />
                   <span>{item.label}</span>
                 </Link>
               ))}
