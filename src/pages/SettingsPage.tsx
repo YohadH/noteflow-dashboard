@@ -614,32 +614,32 @@ export default function SettingsPage() {
         )}
       </section>
 
-      <section className="bg-card rounded-lg border p-6 shadow-card space-y-4">
+      <section className="bg-card rounded-lg border p-4 sm:p-6 shadow-card space-y-4 overflow-hidden">
         <h2 className="font-medium flex items-center gap-2">
           <Plug className="h-4 w-4" /> אינטגרציות
         </h2>
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-3">
-            <div className="shrink-0">
-              <p className="text-sm font-medium">נקודת קצה API</p>
+            <div className="shrink-0 min-w-0">
+              <p className="text-sm font-medium truncate">נקודת קצה API</p>
               <p className="text-xs text-muted-foreground">התחבר ל-API של הבקאנד</p>
             </div>
             <Input
               placeholder="https://api.example.com"
-              className="w-full sm:w-64"
+              className="w-full sm:w-64 sm:min-w-0 sm:shrink-0"
               value={form.apiEndpoint || ''}
               onChange={(event) => setForm((current) => ({ ...current, apiEndpoint: event.target.value }))}
               disabled={isSaving}
             />
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-3">
-            <div className="shrink-0">
-              <p className="text-sm font-medium">Webhook של הלוח הפעיל</p>
-              <p className="text-xs text-muted-foreground">כל המשתמשים בלוח הזה ישלחו התראות לאותה כתובת webhook</p>
+            <div className="shrink min-w-0">
+              <p className="text-sm font-medium truncate">Webhook של הלוח הפעיל</p>
+              <p className="text-xs text-muted-foreground truncate">כל המשתמשים בלוח הזה ישלחו התראות לאותה כתובת webhook</p>
             </div>
             <Input
               placeholder="https://hooks.example.com"
-              className="w-full sm:w-64"
+              className="w-full sm:w-64 sm:min-w-0 sm:shrink-0"
               value={form.webhookUrl || ''}
               onChange={(event) => setForm((current) => ({ ...current, webhookUrl: event.target.value }))}
               disabled={!canEditBoardWebhook || isSaving}
@@ -648,12 +648,12 @@ export default function SettingsPage() {
           {!canEditBoardWebhook && selectedBoard && (
             <p className="text-xs text-muted-foreground px-3">רק בעל הלוח יכול לשנות את ה-webhook המשותף של הלוח.</p>
           )}
-          <div className="flex items-center justify-between p-3 border rounded-md">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-2">
+            <div className="min-w-0">
               <p className="text-sm font-medium">מצב webhook משותף</p>
               <p className="text-xs text-muted-foreground">אפשר להפנות ל-n8n או לכל endpoint שמקבל POST</p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
               {form.webhookUrl?.trim() ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 text-status-completed" />
@@ -668,13 +668,13 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-3">
-            <div className="shrink-0">
+            <div className="shrink-0 min-w-0">
               <p className="text-sm font-medium">ספק אימייל</p>
               <p className="text-xs text-muted-foreground">SMTP / SendGrid / Resend</p>
             </div>
             <Input
               placeholder="Resend"
-              className="w-full sm:w-64"
+              className="w-full sm:w-64 sm:min-w-0 sm:shrink-0"
               value={form.emailProvider || ''}
               onChange={(event) => setForm((current) => ({ ...current, emailProvider: event.target.value }))}
               disabled={isSaving}
