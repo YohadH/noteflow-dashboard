@@ -614,7 +614,7 @@ export default function SettingsPage() {
         )}
       </section>
 
-      <section className="bg-card rounded-lg border p-6 shadow-card space-y-4">
+      <section className="bg-card rounded-lg border p-4 sm:p-6 shadow-card space-y-4 overflow-hidden">
         <h2 className="font-medium flex items-center gap-2">
           <Plug className="h-4 w-4" /> אינטגרציות
         </h2>
