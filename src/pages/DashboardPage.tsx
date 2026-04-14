@@ -70,26 +70,26 @@ export default function DashboardPage() {
   const pendingAlerts = alerts.filter((alert) => alert.status === 'active' || alert.status === 'scheduled');
 
   const stats = [
-    { label: 'Total notes', value: notes.length, icon: StickyNote, color: 'text-primary' },
-    { label: 'Due today', value: dueToday.length, icon: Clock, color: 'text-priority-high' },
-    { label: 'High priority', value: highPriority.length, icon: Flag, color: 'text-priority-urgent' },
-    { label: 'Upcoming reminders', value: upcomingReminders.length, icon: Bell, color: 'text-priority-medium' },
-    { label: 'Pending alerts', value: pendingAlerts.length, icon: AlertTriangle, color: 'text-status-pending' },
-    { label: 'Email actions', value: emailActions.length, icon: Mail, color: 'text-primary' },
+    { label: 'סה"כ פתקים', value: notes.length, icon: StickyNote, color: 'text-primary' },
+    { label: 'לביצוע היום', value: dueToday.length, icon: Clock, color: 'text-priority-high' },
+    { label: 'עדיפות גבוהה', value: highPriority.length, icon: Flag, color: 'text-priority-urgent' },
+    { label: 'תזכורות קרובות', value: upcomingReminders.length, icon: Bell, color: 'text-priority-medium' },
+    { label: 'התראות פעילות', value: pendingAlerts.length, icon: AlertTriangle, color: 'text-status-pending' },
+    { label: 'פעולות אימייל', value: emailActions.length, icon: Mail, color: 'text-primary' },
   ];
 
   const quickActions = [
-    { label: 'New note', icon: Plus, action: () => onNewNote() },
-    { label: 'Add reminder', icon: Bell, action: () => onNewNote({ reminderAt: buildDefaultReminderAt(settings.defaultReminderTime) }) },
-    { label: 'Add alert', icon: AlertTriangle, action: () => navigate('/alerts?new=1') },
-    { label: 'Email draft', icon: Mail, action: () => onNewNote({ hasEmailAction: true }) },
+    { label: 'פתק חדש', icon: Plus, action: () => onNewNote() },
+    { label: 'הוסף תזכורת', icon: Bell, action: () => onNewNote({ reminderAt: buildDefaultReminderAt(settings.defaultReminderTime) }) },
+    { label: 'הוסף התראה', icon: AlertTriangle, action: () => navigate('/alerts?new=1') },
+    { label: 'טיוטת אימייל', icon: Mail, action: () => onNewNote({ hasEmailAction: true }) },
   ];
 
   return (
     <div className="max-w-7xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">A quick view of your notes, reminders, alerts, and email actions.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">לוח בקרה</h1>
+        <p className="mt-1 text-sm text-muted-foreground">מבט מהיר על הפתקים, התזכורות, ההתראות ופעולות האימייל שלך.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
@@ -117,11 +117,11 @@ export default function DashboardPage() {
         <div className="flex max-h-80 flex-col rounded-lg border bg-card p-5 shadow-card">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Flag className="h-4 w-4 text-priority-urgent" />
-            High priority
+            עדיפות גבוהה
           </h2>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
             {highPriority.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No high-priority notes right now.</p>
+              <p className="text-sm text-muted-foreground">אין כרגע פתקים בעדיפות גבוהה.</p>
             ) : (
               highPriority.map((note) => (
                 <div
@@ -140,11 +140,11 @@ export default function DashboardPage() {
         <div className="flex max-h-80 flex-col rounded-lg border bg-card p-5 shadow-card">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Bell className="h-4 w-4 text-primary" />
-            Upcoming reminders
+            תזכורות קרובות
           </h2>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
             {upcomingReminders.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No upcoming reminders.</p>
+              <p className="text-sm text-muted-foreground">אין תזכורות קרובות.</p>
             ) : (
               upcomingReminders.map((reminder) => (
                 <div key={reminder.id} className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted/50">
@@ -162,7 +162,7 @@ export default function DashboardPage() {
         <div className="flex max-h-80 flex-col rounded-lg border bg-card p-5 shadow-card">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-medium">
             <StickyNote className="h-4 w-4 text-primary" />
-            Recent notes
+            פתקים אחרונים
           </h2>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
             {recentNotes.map((note) => (
