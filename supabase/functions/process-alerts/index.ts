@@ -63,11 +63,41 @@ type DeliveryResult = {
   message?: string;
 };
 
+type WebPushErrorShape = {
+  statusCode?: number;
+  body?: string;
+  headers?: Record<string, string>;
+  message?: string;
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'content-type': 'application/json' },
   });
+}
+
+function describeWebPushError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return 'Push delivery failed';
+  }
+
+  const typedError = error as WebPushErrorShape;
+  const parts: string[] = [];
+
+  if (typeof typedError.statusCode === 'number') {
+    parts.push(`status ${typedError.statusCode}`);
+  }
+
+  if (typeof typedError.body === 'string' && typedError.body.trim()) {
+    parts.push(typedError.body.trim());
+  }
+
+  if (!parts.length && typeof typedError.message === 'string' && typedError.message.trim()) {
+    parts.push(typedError.message.trim());
+  }
+
+  return parts.length ? parts.join(': ') : 'Push delivery failed';
 }
 
 function getSupabaseClient() {
@@ -231,7 +261,7 @@ async function deliverPushNotifications(
         typeof error === 'object' && error && 'statusCode' in error && typeof error.statusCode === 'number'
           ? error.statusCode
           : undefined;
-      const message = error instanceof Error ? error.message : 'Push delivery failed';
+      const message = describeWebPushError(error);
 
       if (statusCode === 404 || statusCode === 410) {
         await handleInvalidSubscription(supabase, recipient.id, recipient.endpoint);
@@ -248,7 +278,12 @@ async function deliverPushNotifications(
   }
 
   if (errors.length) {
-    throw new Error(errors[0]);
+    return {
+      attempted: true,
+      delivered: false,
+      channel: 'push',
+      message: errors[0],
+    };
   }
 
   return { attempted: true, delivered: false, channel: 'push', message: 'No push delivery succeeded.' };
