@@ -34,19 +34,31 @@ type BoardMemberRow = {
 export const boardsApi = {
   async listBoards(): Promise<Board[]> {
     ensureSupabaseConfigured();
+    const currentUserId = await getRequiredUserId();
 
     const { data, error } = await supabase
       .from('board_members')
       .select('board_id, role, boards:boards!inner(id, owner_user_id, name, is_personal, webhook_url, n8n_connected, created_at, updated_at)')
+      .eq('user_id', currentUserId)
       .order('created_at', { foreignTable: 'boards', ascending: true });
 
     if (error) {
       throw error;
     }
 
-    return ((data as unknown as BoardMembershipRow[] | null) || [])
+    const mappedBoards = ((data as unknown as BoardMembershipRow[] | null) || [])
       .filter((row): row is BoardMembershipRow & { boards: NonNullable<BoardMembershipRow['boards']> } => Boolean(row.boards))
       .map((row) => mapBoard(row.boards, row.role));
+
+    return Array.from(
+      mappedBoards.reduce((accumulator, board) => {
+        const existing = accumulator.get(board.id);
+        if (!existing || (existing.role !== 'owner' && board.role === 'owner')) {
+          accumulator.set(board.id, board);
+        }
+        return accumulator;
+      }, new Map<string, Board>()).values(),
+    );
   },
 
   async updateIntegration(boardId: string, integration: Pick<Board, 'webhookUrl' | 'n8nConnected'>): Promise<Board> {

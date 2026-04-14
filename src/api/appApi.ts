@@ -11,8 +11,9 @@ import { decorateNotesWithSharing } from '@/lib/noteSharing';
 export const appApi = {
   async loadAll() {
     const [settings, boards] = await Promise.all([settingsApi.get(), boardsApi.listBoards()]);
-    const activeBoardId = settings.activeBoardId || boards[0]?.id || undefined;
-    const activeBoard = boards.find((board) => board.id === activeBoardId) || boards[0];
+    const requestedBoardId = settings.activeBoardId;
+    const activeBoard = boards.find((board) => board.id === requestedBoardId) || boards[0];
+    const activeBoardId = activeBoard?.id;
 
     if (!activeBoardId) {
       return {

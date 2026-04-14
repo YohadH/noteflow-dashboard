@@ -14,6 +14,33 @@ interface LayoutContext {
   navigate: NavigateFunction;
 }
 
+function buildDefaultReminderAt(defaultReminderTime?: string) {
+  const now = new Date();
+  const fallback = new Date(now.getTime() + 60 * 60 * 1000);
+  fallback.setSeconds(0, 0);
+
+  if (!defaultReminderTime) {
+    return fallback.toISOString();
+  }
+
+  const [hoursText = '09', minutesText = '00'] = defaultReminderTime.split(':');
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+    return fallback.toISOString();
+  }
+
+  const candidate = new Date(now);
+  candidate.setHours(hours, minutes, 0, 0);
+
+  if (candidate.getTime() <= now.getTime()) {
+    candidate.setDate(candidate.getDate() + 1);
+  }
+
+  return candidate.toISOString();
+}
+
 function isToday(iso?: string) {
   if (!iso) {
     return false;
@@ -30,7 +57,7 @@ function isToday(iso?: string) {
 }
 
 export default function DashboardPage() {
-  const { notes, reminders, alerts, emailActions } = useNoteStore();
+  const { notes, reminders, alerts, emailActions, settings } = useNoteStore();
   const { onEditNote, onNewNote, navigate } = useOutletContext<LayoutContext>();
 
   const activeNotes = notes.filter((note) => note.status === 'active');
@@ -53,7 +80,7 @@ export default function DashboardPage() {
 
   const quickActions = [
     { label: 'New note', icon: Plus, action: () => onNewNote() },
-    { label: 'Add reminder', icon: Bell, action: () => onNewNote({ reminderAt: new Date().toISOString() }) },
+    { label: 'Add reminder', icon: Bell, action: () => onNewNote({ reminderAt: buildDefaultReminderAt(settings.defaultReminderTime) }) },
     { label: 'Add alert', icon: AlertTriangle, action: () => navigate('/alerts?new=1') },
     { label: 'Email draft', icon: Mail, action: () => onNewNote({ hasEmailAction: true }) },
   ];
