@@ -620,26 +620,26 @@ export default function SettingsPage() {
         </h2>
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-3">
-            <div className="shrink-0">
-              <p className="text-sm font-medium">נקודת קצה API</p>
+            <div className="shrink-0 min-w-0">
+              <p className="text-sm font-medium truncate">נקודת קצה API</p>
               <p className="text-xs text-muted-foreground">התחבר ל-API של הבקאנד</p>
             </div>
             <Input
               placeholder="https://api.example.com"
-              className="w-full sm:w-64"
+              className="w-full sm:w-64 sm:min-w-0 sm:shrink-0"
               value={form.apiEndpoint || ''}
               onChange={(event) => setForm((current) => ({ ...current, apiEndpoint: event.target.value }))}
               disabled={isSaving}
             />
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-md gap-3">
-            <div className="shrink-0">
-              <p className="text-sm font-medium">Webhook של הלוח הפעיל</p>
-              <p className="text-xs text-muted-foreground">כל המשתמשים בלוח הזה ישלחו התראות לאותה כתובת webhook</p>
+            <div className="shrink min-w-0">
+              <p className="text-sm font-medium truncate">Webhook של הלוח הפעיל</p>
+              <p className="text-xs text-muted-foreground truncate">כל המשתמשים בלוח הזה ישלחו התראות לאותה כתובת webhook</p>
             </div>
             <Input
               placeholder="https://hooks.example.com"
-              className="w-full sm:w-64"
+              className="w-full sm:w-64 sm:min-w-0 sm:shrink-0"
               value={form.webhookUrl || ''}
               onChange={(event) => setForm((current) => ({ ...current, webhookUrl: event.target.value }))}
               disabled={!canEditBoardWebhook || isSaving}
